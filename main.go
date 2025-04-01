@@ -7,12 +7,13 @@ import (
 
 	// "github.com/sirupsen/logrus"
     // "go.uber.org/zap"
+    "fmt"
 	"steward/utils"
 	"steward/pkg/ssh"
 )
 
 // var log = logrus.New()
-var logger = utils.SetupLogging()
+var logger = utils.SetupLogging(false)
 
 type ValidationMode int
 
@@ -40,4 +41,6 @@ func main() {
         logger.Fatalf("Error executing command with validation: %v", err)
     }
     logger.Info("Step 2: Command executed successfully with validation")
+
+    fmt.Println("Done !")
 }
