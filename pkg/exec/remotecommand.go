@@ -1,4 +1,4 @@
-package ssh
+package exec
 
 import (
 	"os"
@@ -83,6 +83,25 @@ func RunRemoteCommand(client *ssh.Client, command string) error {
 
     logger.Infof("Command executed successfully on host %s: %s", client.RemoteAddr(), command)
     return nil
+}
+
+// RunRemoteCommandWithOutput executes a command on the remote server and returns its output
+func RunRemoteCommandWithOutput(client *ssh.Client, command string) (string, error) {
+    session, err := client.NewSession()
+    if err != nil {
+        return "", fmt.Errorf("failed to create SSH session: %w", err)
+    }
+    defer session.Close()
+
+    var stdoutBuf, stderrBuf bytes.Buffer
+    session.Stdout = &stdoutBuf
+    session.Stderr = &stderrBuf
+
+    if err := session.Run(command); err != nil {
+        return "", fmt.Errorf("command execution failed: %w\nstderr: %s", err, stderrBuf.String())
+    }
+
+    return stdoutBuf.String(), nil
 }
 
 // RunRemoteCommandWithValidation executes a remote command and validates its output
