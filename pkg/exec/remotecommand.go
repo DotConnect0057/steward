@@ -104,7 +104,7 @@ func RunRemoteCommandWithOutput(client *ssh.Client, command string) (string, err
     return stdoutBuf.String(), nil
 }
 
-// RunRemoteCommandWithValidation executes a remote command and validates its output
+// RunRemoteCommandWithValidation executes a remote command and validates its output, return error if not valid.
 func RunRemoteCommandWithValidation(client *ssh.Client, command string, expectedOutput string, mode ValidationMode) error {
     session, err := client.NewSession()
     if err != nil {

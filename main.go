@@ -11,10 +11,11 @@ import (
 	"steward/utils"
 	"steward/pkg/exec"
 	"steward/pkg/pkgman"
+	"steward/pkg/common"
 )
 
 // var log = logrus.New()
-var logger = utils.SetupLogging(false)
+var logger = utils.SetupLogging(true)
 
 type ValidationMode int
 
@@ -24,6 +25,32 @@ const (
 )
 
 func main() {
+
+	// Load configuration
+	config, err := common.LoadConfig("./config/steward/config.yaml")
+	if err != nil {
+		logger.Fatalf("Error loading config: %v", err)
+	}
+
+	// Generate common configuration files
+	for _, template := range config.Common.Templates {
+		err := common.GenerateConfig(template.TemplateFile, template.OutputFile, template.Data)
+		if err != nil {
+			logger.Fatalf("Error generating config: %v", err)
+		}
+		logger.Infof("Generated config file: %s", template.OutputFile)
+	}
+	// Geenrate host-specific configuration files
+	for _, host := range config.Hosts {
+		for _, template := range host.Templates {
+			err := common.GenerateConfig(template.TemplateFile, template.OutputFile, template.Data)
+			if err != nil {
+				logger.Fatalf("Error generating config: %v", err)
+			}
+			logger.Infof("Generated config file for host %s: %s", host.Host, template.OutputFile)
+		}
+	}
+
     port := "22"
     client, err := exec.SetupSSHClient("192.168.100.14", port, "admin", "admin", "")
     if err != nil {
