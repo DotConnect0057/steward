@@ -20,9 +20,15 @@ func NewAptManager(client *ssh.Client) *AptManager {
     return &AptManager{Client: client}
 }
 
+// UpdateRepo updates the apt package repository
+func (a *AptManager) UpdateRepo() error {
+    command := fmt.Sprintf("sudo apt update")
+    return exec.RunRemoteCommand(a.Client, command)
+}
+
 // InstallPackage installs a package using apt
 func (a *AptManager) InstallPackage(packageName string) error {
-    command := fmt.Sprintf("sudo apt update && sudo apt install -y %s", packageName)
+    command := fmt.Sprintf("sudo apt install -y %s", packageName)
     return exec.RunRemoteCommand(a.Client, command)
 }
 
@@ -62,4 +68,18 @@ func (a *AptManager) InstallGPGKey(keyName string, keyURL string) error {
     // Install the GPG key if not already installed
     command := fmt.Sprintf("curl -fsSL %s | sudo gpg --dearmor -o /etc/apt/keyrings/%s-apt-keyring.gpg", keyURL, keyName)
     return exec.RunRemoteCommand(a.Client, command)
+}
+
+// Check if a package is installed
+func (a *AptManager) IsPackageInstalled(packageName string) (bool, error) {
+    command := fmt.Sprintf("dpkg -l | grep '^ii' | grep '%s'", packageName)
+    output, err := exec.RunRemoteCommandWithOutput(a.Client, command)
+    if err != nil {
+        return false, fmt.Errorf("failed to check package: %w", err)
+    }
+
+    if strings.Contains(output, packageName) {
+        return true, nil
+    }
+    return false, nil
 }

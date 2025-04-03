@@ -1,0 +1,56 @@
+common:
+    packages:
+        standard:
+            - apt-transport-https
+            - ca-certificates
+            - curl
+            - gpg
+        third_party:
+            - gpg_key_url: https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key
+              name: kubernetes
+              packages:
+                - kubeadm
+                - kubelet
+                - kubectl
+              repo: https://pkgs.k8s.io/core:/stable:/v1.32/deb/
+    templates:
+        - data:
+            backends:
+                - address: 192.168.1.101
+                  name: web1
+                  port: 80
+                - address: 192.168.1.102
+                  name: web2
+                  port: 80
+                - address: 192.168.1.103
+                  name: web3
+                  port: 80
+          name: haproxy
+          output_file: ./config/output/haproxy.cfg
+          remote_file: /etc/haproxy/haproxy.cfg
+          sudo: true
+          template_file: ./config/template/haproxy_template.cfg
+hosts:
+    - host: 192.168.100.14
+      packages:
+        standard:
+            - nginx
+        third_party_packages:
+            - gpg_key_url: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/Release.key
+              name: cri-o
+              packages:
+                - cri-o
+              repo: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/
+      password: admin
+      templates:
+        - data:
+            interface: eth0
+            priority: 100
+            state: MASTER
+            virtual_ip: 192.168.1.100
+          name: keepalived
+          output_file: ./config/output/keepalived.cfg
+          remote_file: /etc/keepalived/keepalived.conf
+          sudo: true
+          template_file: ./config/template/keepalived_template.cfg
+      user: admin

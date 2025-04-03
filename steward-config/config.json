@@ -9,91 +9,81 @@
       ],
       "third_party": [
         {
-          "name": "kubernetes",
           "gpg_key_url": "https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key",
-          "repo": "https://pkgs.k8s.io/core:/stable:/v1.32/deb/",
+          "name": "kubernetes",
           "packages": [
             "kubeadm",
             "kubelet",
             "kubectl"
-          ]
+          ],
+          "repo": "https://pkgs.k8s.io/core:/stable:/v1.32/deb/"
         }
       ]
     },
     "templates": [
       {
-        "name": "haproxy",
-        "template_file": "haproxy_template.cfg",
-        "output_file": "haproxy.cfg",
-        "remote_file": "/etc/haproxy/haproxy.cfg",
-        "sudo": true,
         "data": {
           "backends": [
             {
-              "name": "web1",
               "address": "192.168.1.101",
+              "name": "web1",
               "port": 80
             },
             {
-              "name": "web2",
               "address": "192.168.1.102",
+              "name": "web2",
               "port": 80
             },
             {
-              "name": "web3",
               "address": "192.168.1.103",
+              "name": "web3",
               "port": 80
             }
           ]
-        }
-      },
-      {
-        "name": "keepalived",
-        "template_file": "keepalived_template.cfg",
-        "output_file": "keepalived.cfg",
-        "remote_file": "/etc/keepalived/keepalived.conf",
+        },
+        "name": "haproxy",
+        "output_file": "./config/output/haproxy.cfg",
+        "remote_file": "/etc/haproxy/haproxy.cfg",
         "sudo": true,
-        "data": {
-          "virtual_ip": "192.168.1.100",
-          "interface": "eth0",
-          "priority": 100,
-          "state": "MASTER"
-        }
+        "template_file": "./config/template/haproxy_template.cfg"
       }
     ]
   },
   "hosts": [
     {
       "host": "192.168.100.14",
-      "user": "admin",
-      "password": "admin",
       "packages": {
         "standard": [
           "nginx"
         ],
         "third_party_packages": [
           {
-            "name": "cri-o",
             "gpg_key_url": "https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/Release.key",
-            "repo": "https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/",
+            "name": "cri-o",
             "packages": [
               "cri-o"
-            ]
+            ],
+            "repo": "https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/"
           }
         ]
       },
+      "password": "admin",
       "templates": [
         {
-          "name": "myconfig",
-          "template_file": "myconfig_template.cfg",
-          "output_file": "myconfig.cfg",
-          "remote_file": "/home/admin/myconfig.cfg",
-          "sudo": false,
           "data": {
-            "name": "node-101"
-          }
+            "interface": "eth0",
+            "priority": 100,
+            "state": "MASTER",
+            "virtual_ip": "192.168.1.100"
+          },
+          "name": "keepalived",
+          "output_file": "./config/output/keepalived.cfg",
+          "remote_file": "/etc/keepalived/keepalived.conf",
+          "sudo": true,
+          "template_file": "./config/template/keepalived_template.cfg"
         }
-      ]
+      ],
+      "user": "admin"
     }
   ]
 }
