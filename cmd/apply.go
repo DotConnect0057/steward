@@ -24,16 +24,15 @@ to quickly create a Cobra application.`,
 		config, err := common.LoadConfig("steward-config/config.yaml")
 		if err != nil {
 			logger.Errorf("Failed to load steward config: %v", err)
-			return err
 		}
 		logger.Infof("Steward config loaded successfully")
 
 		// Apply the configuration
-		err = run.ApplyConfig(config)
-		if err != nil {
-			logger.Errorf("Failed to apply configuration: %v", err)
-			return err
-		}
+		// err = run.ApplyConfig(config)
+		run.ApplyConfigWithProgress(config)
+		// if err != nil {
+		// 	logger.Errorf("Failed to apply configuration: %v", err)
+		// }
 		logger.Infof("Configuration applied successfully")
 	},
 }

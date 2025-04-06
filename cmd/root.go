@@ -11,7 +11,7 @@ import (
 	"steward/utils"
 )
 
-var logger = utils.SetupLogging(true)
+var logger = utils.SetupLogging(false)
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{

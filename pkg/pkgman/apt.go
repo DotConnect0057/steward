@@ -8,7 +8,7 @@ import (
     "strings"
 )
 
-var logger = utils.SetupLogging(true)
+var logger = utils.SetupLogging(false)
 
 // AptManager provides methods to manage apt packages on a remote server
 type AptManager struct {

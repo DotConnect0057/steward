@@ -13,7 +13,7 @@ import (
 
 type ValidationMode int
 
-var logger = utils.SetupLogging(true)
+var logger = utils.SetupLogging(false)
 
 const (
     ExactMatch ValidationMode = iota // Exact string match

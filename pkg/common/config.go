@@ -9,6 +9,34 @@ import (
 )
 
 // Config represents the structure of the configuration file
+type Host struct {
+    Host              string `yaml:"host" json:"host"`
+    User              string `yaml:"user" json:"user"`
+    Password          string `yaml:"password" json:"password"`
+    SSHKey            string `yaml:"ssh_key,omitempty" json:"ssh_key,omitempty"`
+    Packages          struct {
+        Standard          []string `yaml:"standard" json:"standard"`
+        ThirdParty []struct {
+            Name       string   `yaml:"name" json:"name"`
+            GPGKeyURL  string   `yaml:"gpg_key_url" json:"gpg_key_url"`
+            Repo       string   `yaml:"repo" json:"repo"`
+            Packages   []string `yaml:"packages" json:"packages"`
+        } `yaml:"third_party" json:"third_party"`
+    } `yaml:"packages" json:"packages"`
+    Templates []struct {
+        Name         string `yaml:"name" json:"name"`
+        TemplateFile string `yaml:"template_file" json:"template_file"`
+        OutputFile   string `yaml:"output_file" json:"output_file"`
+        RemoteFile   string `yaml:"remote_file" json:"remote_file"`
+        Sudo         bool   `yaml:"sudo" json:"sudo"`
+        Data         any    `yaml:"data" json:"data"`
+    } `yaml:"templates" json:"templates"`
+}
+
+// Hosts is a slice of Host
+type Hosts []Host
+
+// Config represents the structure of the configuration file
 type Config struct {
     Common struct {
         Packages struct {
@@ -29,29 +57,30 @@ type Config struct {
             Data         any    `yaml:"data" json:"data"`
         } `yaml:"templates" json:"templates"`
     } `yaml:"common" json:"common"`
-    Hosts []struct {
-        Host              string `yaml:"host" json:"host"`
-        User              string `yaml:"user" json:"user"`
-        Password          string `yaml:"password" json:"password"`
-        SSHKey            string `yaml:"ssh_key,omitempty" json:"ssh_key,omitempty"`
-        Packages          struct {
-            Standard          []string `yaml:"standard" json:"standard"`
-            ThirdPartyPackages []struct {
-                Name       string   `yaml:"name" json:"name"`
-                GPGKeyURL  string   `yaml:"gpg_key_url" json:"gpg_key_url"`
-                Repo       string   `yaml:"repo" json:"repo"`
-                Packages   []string `yaml:"packages" json:"packages"`
-            } `yaml:"third_party_packages" json:"third_party_packages"`
-        } `yaml:"packages" json:"packages"`
-        Templates []struct {
-            Name         string `yaml:"name" json:"name"`
-            TemplateFile string `yaml:"template_file" json:"template_file"`
-            OutputFile   string `yaml:"output_file" json:"output_file"`
-            RemoteFile   string `yaml:"remote_file" json:"remote_file"`
-            Sudo         bool   `yaml:"sudo" json:"sudo"`
-            Data         any    `yaml:"data" json:"data"`
-        } `yaml:"templates" json:"templates"`
-    } `yaml:"hosts" json:"hosts"`
+    Hosts Hosts `yaml:"hosts" json:"hosts"`
+    // Hosts []struct {
+    //     Host              string `yaml:"host" json:"host"`
+    //     User              string `yaml:"user" json:"user"`
+    //     Password          string `yaml:"password" json:"password"`
+    //     SSHKey            string `yaml:"ssh_key,omitempty" json:"ssh_key,omitempty"`
+    //     Packages          struct {
+    //         Standard          []string `yaml:"standard" json:"standard"`
+    //         ThirdPartyPackages []struct {
+    //             Name       string   `yaml:"name" json:"name"`
+    //             GPGKeyURL  string   `yaml:"gpg_key_url" json:"gpg_key_url"`
+    //             Repo       string   `yaml:"repo" json:"repo"`
+    //             Packages   []string `yaml:"packages" json:"packages"`
+    //         } `yaml:"third_party_packages" json:"third_party_packages"`
+    //     } `yaml:"packages" json:"packages"`
+    //     Templates []struct {
+    //         Name         string `yaml:"name" json:"name"`
+    //         TemplateFile string `yaml:"template_file" json:"template_file"`
+    //         OutputFile   string `yaml:"output_file" json:"output_file"`
+    //         RemoteFile   string `yaml:"remote_file" json:"remote_file"`
+    //         Sudo         bool   `yaml:"sudo" json:"sudo"`
+    //         Data         any    `yaml:"data" json:"data"`
+    //     } `yaml:"templates" json:"templates"`
+    // } `yaml:"hosts" json:"hosts"`
 }
 
 // LoadConfig loads a configuration file (YAML or JSON) into the Config struct

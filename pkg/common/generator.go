@@ -11,7 +11,7 @@ import (
     "steward/utils"
 )
 
-var logger = utils.SetupLogging(true)
+var logger = utils.SetupLogging(false)
 
 func GenerateStewardConfig() error {
     // Define the data structure

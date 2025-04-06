@@ -23,7 +23,6 @@ to quickly create a Cobra application.`,
 		err := common.GenerateStewardConfig()
 		if err != nil {
 			logger.Errorf("Failed to generate steward config: %v", err)
-			return err
 		}
 		logger.Infof("Steward config generated successfully")
 	},

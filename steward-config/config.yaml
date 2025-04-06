@@ -35,7 +35,31 @@ hosts:
       packages:
         standard:
             - nginx
-        third_party_packages:
+        third_party:
+            - gpg_key_url: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/Release.key
+              name: cri-o
+              packages:
+                - cri-o
+              repo: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/
+      password: admin
+      templates:
+        - data:
+            interface: eth0
+            priority: 100
+            state: MASTER
+            virtual_ip: 192.168.1.100
+          name: keepalived
+          output_file: ./config/output/keepalived.cfg
+          remote_file: /etc/keepalived/keepalived.conf
+          sudo: true
+          template_file: ./config/template/keepalived_template.cfg
+      user: admin
+    - host: 192.168.100.230
+      packages:
+        standard:
+            - nginx
+            - vim
+        third_party:
             - gpg_key_url: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/Release.key
               name: cri-o
               packages:
