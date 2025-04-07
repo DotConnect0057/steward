@@ -13,12 +13,8 @@ import (
 var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Initialize a new configuration file",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Long: `Initialize a new configuration file. This command will create a new configuration
+file in the specified directory. The new configuration file will be created with default values.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		err := common.GenerateStewardConfig()
 		if err != nil {

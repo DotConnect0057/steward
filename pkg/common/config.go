@@ -8,6 +8,15 @@ import (
     "gopkg.in/yaml.v3"
 )
 
+type CustomProcedure struct {
+    Name         string `yaml:"name" json:"name"`
+    Command      string `yaml:"command" json:"command"`
+    ExpectedOutput string `yaml:"expected_output" json:"expected_output"`
+    Sudo         bool   `yaml:"sudo" json:"sudo"`
+}
+
+type CustomProcedures []CustomProcedure
+
 // Config represents the structure of the configuration file
 type Host struct {
     Host              string `yaml:"host" json:"host"`
@@ -31,6 +40,7 @@ type Host struct {
         Sudo         bool   `yaml:"sudo" json:"sudo"`
         Data         any    `yaml:"data" json:"data"`
     } `yaml:"templates" json:"templates"`
+    CustomProcedures CustomProcedures `yaml:"custom_procedures" json:"custom_procedures"`
 }
 
 // Hosts is a slice of Host
@@ -56,6 +66,7 @@ type Config struct {
             Sudo         bool   `yaml:"sudo" json:"sudo"`
             Data         any    `yaml:"data" json:"data"`
         } `yaml:"templates" json:"templates"`
+        CustomProcedures CustomProcedures `yaml:"custom_procedures" json:"custom_procedures"`
     } `yaml:"common" json:"common"`
     Hosts Hosts `yaml:"hosts" json:"hosts"`
     // Hosts []struct {

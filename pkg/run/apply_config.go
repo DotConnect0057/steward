@@ -23,9 +23,11 @@ type TaskStatus struct {
 	Status         string
     Packages       string
     Templates      string
+	Procedures     string
 	TotalTasks     int
 	PkgTasks       int
 	TemplateTasks  int
+	ProcedureTasks int
 }
 
 const (
@@ -47,7 +49,7 @@ func DisplayProgress(totalTasks int, completedTasks int,  tasks []TaskStatus, mu
     // Print each task's status
     mu.Lock()
     for _, task := range tasks {
-        fmt.Fprintf(writer, "%s\tPackages: %s\tTemplates: %s\t%s\n", task.HostName, task.Packages, task.Templates, task.Status)
+        fmt.Fprintf(writer, "%s\tPackages: %s\tTemplates: %s\tProcedures: %s\t%s\n", task.HostName, task.Packages, task.Templates, task.Procedures, task.Status)
     }
     mu.Unlock()
 
@@ -237,15 +239,18 @@ func ApplyConfigWithProgress(config *common.Config) {
 
 		pkgTasks := len(host.Packages.Standard) + len(config.Common.Packages.Standard) + thirdPartyPkgCount
 		templateTasks := len(config.Common.Templates) + len(host.Templates)
+		procedureTasks := len(config.Common.CustomProcedures)
 
 		tasks = append(tasks, TaskStatus{
             HostName: host.Host,
             Status:   "Pending",
 			Packages: fmt.Sprintf("0/%d", pkgTasks),
 			Templates: fmt.Sprintf("0/%d", templateTasks),
-			TotalTasks: pkgTasks + templateTasks,
+			Procedures: fmt.Sprintf("0/%d", procedureTasks),
+			TotalTasks: pkgTasks + templateTasks + procedureTasks,
 			PkgTasks: pkgTasks,
 			TemplateTasks: templateTasks,
+			ProcedureTasks: procedureTasks,
         })
     }
 
@@ -269,6 +274,7 @@ func ApplyConfigWithProgress(config *common.Config) {
 
 			completedPkgTasks := 0
 			completedTemplateTasks := 0
+			completedProcedureTasks := 0
 			// pkgTasks := len(host.Packages.Standard) + len(config.Common.Packages.Standard)
 			logger.Infof("Starting task for host: %s", host.Host)
 
@@ -290,6 +296,8 @@ func ApplyConfigWithProgress(config *common.Config) {
             mu.Lock()
             logger.Infof("Installing packages for host: %s", host.Host)
             mu.Unlock()
+			tasks[taskIndex].Status = "In Progress"
+			DisplayProgress(totalAllHostsTasks, completedTotalTasks, tasks, &mu)
 
 			// Update Repositories to avoid errors of missing links
 			err = aptman.UpdateRepo()
@@ -305,6 +313,7 @@ func ApplyConfigWithProgress(config *common.Config) {
                 err := aptman.InstallPackage(pkg)
                 if err != nil {
                     mu.Lock()
+					tasks[taskIndex].Status = "Error"
                     logger.Errorf("Error installing package %s on host %s: %v", pkg, host.Host, err)
                     mu.Unlock()
                     return
@@ -324,6 +333,7 @@ func ApplyConfigWithProgress(config *common.Config) {
 				err := aptman.InstallPackage(pkg)
 				if err != nil {
 					mu.Lock()
+					tasks[taskIndex].Status = "Error"
 					logger.Errorf("Error installing package %s on host %s: %v", pkg, host.Host, err)
 					mu.Unlock()
 					return
@@ -340,10 +350,17 @@ func ApplyConfigWithProgress(config *common.Config) {
 
 			// Install common third-party packages
 			for _, pkg := range config.Common.Packages.ThirdParty {
+				// Install the GPG key skip if empty
+				if pkg.GPGKeyURL == "" {
+					mu.Lock()
+					logger.Infof("GPG key URL is empty for package %s on host %s, skipping installation", pkg.Name, host.Host)
+					mu.Unlock()
+				}
 				// Install the GPG key
 				err = aptman.InstallGPGKey(pkg.Name, pkg.GPGKeyURL)
 				if err != nil {
 					mu.Lock()
+					tasks[taskIndex].Status = "Error"
 					logger.Errorf("Error installing GPG key %s on host %s: %v", pkg.Name, host.Host, err)
 					mu.Unlock()
 					return
@@ -355,6 +372,7 @@ func ApplyConfigWithProgress(config *common.Config) {
 				err = aptman.AddRepository(pkg.Name, pkg.Repo)
 				if err != nil {
 					mu.Lock()
+					tasks[taskIndex].Status = "Error"
 					logger.Errorf("Error adding repository %s on host %s: %v", pkg.Name, host.Host, err)
 					mu.Unlock()
 					return
@@ -370,6 +388,7 @@ func ApplyConfigWithProgress(config *common.Config) {
 					err = aptman.InstallPackage(dep)
 					if err != nil {
 						mu.Lock()
+						tasks[taskIndex].Status = "Error"
 						logger.Errorf("Error installing third-party package %s on host %s: %v", dep, host.Host, err)
 						mu.Unlock()
 						return
@@ -389,7 +408,8 @@ func ApplyConfigWithProgress(config *common.Config) {
 					err := common.GenerateConfig(template.TemplateFile, template.OutputFile, template.Data)
 					if err != nil {
 						mu.Lock()
-						logger.Errorf("Error generating config for host %s: %v", host.Host, err)
+						tasks[taskIndex].Status = "Error"
+						logger.Errorf("Error generating config for host %s, template: %s, %v", template.TemplateFile, host.Host, err)
 						mu.Unlock()
 						return
 					}
@@ -400,6 +420,7 @@ func ApplyConfigWithProgress(config *common.Config) {
 					}
 					if err != nil {
 						mu.Lock()
+						tasks[taskIndex].Status = "Error"
 						logger.Errorf("Error transferring file %s to host %s: %v", template.OutputFile, host.Host, err)
 						mu.Unlock()
 						return
@@ -419,6 +440,7 @@ func ApplyConfigWithProgress(config *common.Config) {
 					err := common.GenerateConfig(template.TemplateFile, template.OutputFile, template.Data)
 					if err != nil {
 						mu.Lock()
+						tasks[taskIndex].Status = "Error"
 						logger.Errorf("Error generating config for host %s: %v", host.Host, err)
 						mu.Unlock()
 						return
@@ -430,6 +452,7 @@ func ApplyConfigWithProgress(config *common.Config) {
 					}
 					if err != nil {
 						mu.Lock()
+						tasks[taskIndex].Status = "Error"
 						logger.Errorf("Error transferring file %s to host %s: %v", template.OutputFile, host.Host, err)
 						mu.Unlock()
 						return
@@ -442,6 +465,30 @@ func ApplyConfigWithProgress(config *common.Config) {
 					tasks[taskIndex].Templates = fmt.Sprintf("%d/%d", completedTemplateTasks, tasks[taskIndex].TemplateTasks)
 					tasks[taskIndex].Status = "In Progress"
 					DisplayProgress(totalAllHostsTasks, completedTotalTasks, tasks, &mu)	
+				}
+
+				// Run custom procedures
+				for _, procedure := range config.Common.CustomProcedures {
+					if procedure.Sudo {
+						err = exec.RunRemoteCommandWithValidation(sshClient, fmt.Sprintf("sudo %s", procedure.Command), procedure.ExpectedOutput, exec.LazyMatch)
+					} else {
+						err = exec.RunRemoteCommandWithValidation(sshClient, procedure.Command, procedure.ExpectedOutput, exec.LazyMatch)
+					}
+					if err != nil {
+						mu.Lock()
+						tasks[taskIndex].Status = "Error"
+						logger.Errorf("Error running custom procedure %s on host %s: %v", procedure.Command, host.Host, err)
+						mu.Unlock()
+						return
+					}
+					mu.Lock()
+					logger.Infof("Run custom procedure %s on host %s", procedure.Command, host.Host)
+					mu.Unlock()
+					completedProcedureTasks++
+					completedTotalTasks++
+					tasks[taskIndex].Procedures = fmt.Sprintf("%d/%d", completedProcedureTasks, tasks[taskIndex].ProcedureTasks)
+					tasks[taskIndex].Status = "In Progress"
+					DisplayProgress(totalAllHostsTasks, completedTotalTasks, tasks, &mu)
 				}
 
 				tasks[taskIndex].Status = "Completed"

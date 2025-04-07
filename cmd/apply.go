@@ -13,13 +13,10 @@ import (
 // applyCmd represents the apply command
 var applyCmd = &cobra.Command{
 	Use:   "apply",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Apply the configuration to the system",
+	Long: `Apply the configuration to the system. This command will read the configuration
+file and apply the settings to the system. It will also provide real-time updates
+to the user about the progress of the application process.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		config, err := common.LoadConfig("steward-config/config.yaml")
 		if err != nil {
