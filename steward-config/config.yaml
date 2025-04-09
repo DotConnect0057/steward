@@ -16,15 +16,15 @@ common:
     templates:
         - data:
             backends:
-                - address: 192.168.1.101
-                  name: web1
-                  port: 80
-                - address: 192.168.1.102
-                  name: web2
-                  port: 80
-                - address: 192.168.1.103
-                  name: web3
-                  port: 80
+                - address: 172.18.150.162
+                  name: k8s
+                  port: 16443
+                - address: 172.18.147.137
+                  name: k8s
+                  port: 16443
+                - address: 172.18.152.121
+                  name: k8s
+                  port: 16443
           name: haproxy
           output_file: ./config/output/haproxy.cfg
           remote_file: /etc/haproxy/haproxy.cfg
@@ -64,30 +64,30 @@ common:
           sudo: true
 
 hosts:
-    - host: 192.168.100.14
-      packages:
-        standard:
-            - nginx
-        third_party:
-            - gpg_key_url: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/Release.key
-              name: cri-o
-              packages:
-                - cri-o
-              repo: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/
-      password: admin
-      templates:
-        - data:
-            interface: eth0
-            priority: 100
-            state: MASTER
-            virtual_ip: 192.168.1.100
-          name: keepalived
-          output_file: ./config/output/keepalived.cfg
-          remote_file: /etc/keepalived/keepalived.conf
-          sudo: true
-          template_file: ./config/template/keepalived_template.cfg
-      user: admin
-    - host: 192.168.100.162
+    # - host: 192.168.100.14
+    #   packages:
+    #     standard:
+    #         - nginx
+    #     third_party:
+    #         - gpg_key_url: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/Release.key
+    #           name: cri-o
+    #           packages:
+    #             - cri-o
+    #           repo: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/
+    #   password: admin
+    #   templates:
+    #     - data:
+    #         interface: eth0
+    #         priority: 100
+    #         state: MASTER
+    #         virtual_ip: 172.18.149.100
+    #       name: keepalived
+    #       output_file: ./config/output/keepalived.cfg
+    #       remote_file: /etc/keepalived/keepalived.conf
+    #       sudo: true
+    #       template_file: ./config/template/keepalived_template.cfg
+    #   user: admin
+    - host: 192.168.100.106
       packages:
         standard:
             - nginx
@@ -98,16 +98,64 @@ hosts:
               packages:
                 - cri-o
               repo: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/
-      password: admin
+      password: lab
       templates:
         - data:
             interface: eth0
-            priority: 110
-            state: BACKUP
-            virtual_ip: 192.168.1.100
+            priority: 100
+            state: MASTER
+            virtual_ip: 172.18.149.100
           name: keepalived
           output_file: ./config/output/keepalived.cfg
           remote_file: /etc/keepalived/keepalived.conf
           sudo: true
           template_file: ./config/template/keepalived_template.cfg
-      user: admin
+      user: lab
+    - host: 192.168.100.107
+      packages:
+        standard:
+            - nginx
+            - vim
+        third_party:
+            - gpg_key_url: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/Release.key
+              name: cri-o
+              packages:
+                - cri-o
+              repo: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/
+      password: lab
+      templates:
+        - data:
+            interface: eth0
+            priority: 110
+            state: BACKUP
+            virtual_ip: 172.18.149.100
+          name: keepalived
+          output_file: ./config/output/keepalived.cfg
+          remote_file: /etc/keepalived/keepalived.conf
+          sudo: true
+          template_file: ./config/template/keepalived_template.cfg
+      user: lab
+    - host: 192.168.100.108
+      packages:
+        standard:
+            - nginx
+            - vim
+        third_party:
+            - gpg_key_url: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/Release.key
+              name: cri-o
+              packages:
+                - cri-o
+              repo: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/
+      password: lab
+      templates:
+        - data:
+            interface: eth0
+            priority: 110
+            state: BACKUP
+            virtual_ip: 172.18.149.100
+          name: keepalived
+          output_file: ./config/output/keepalived.cfg
+          remote_file: /etc/keepalived/keepalived.conf
+          sudo: true
+          template_file: ./config/template/keepalived_template.cfg
+      user: lab

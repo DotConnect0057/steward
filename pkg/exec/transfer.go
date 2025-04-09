@@ -48,7 +48,7 @@ func TransferFile(client *ssh.Client, localFilePath, remoteFilePath string) erro
     return nil
 }
 
-func TransferFileWithRoot(client *ssh.Client, localFilePath, remoteFilePath string) error {
+func TransferFileWithRoot(client *ssh.Client, localFilePath, remoteFilePath string, sudoPassword string) error {
 	// Detect filename
 	fileName := filepath.Base(localFilePath)
 
@@ -62,7 +62,7 @@ func TransferFileWithRoot(client *ssh.Client, localFilePath, remoteFilePath stri
     // Ensure the remote directory exists
     remoteDir := filepath.Dir(remoteFilePath)
 
-	err = RunRemoteCommand(client, fmt.Sprintf("sudo mkdir -p %s", remoteDir))
+	err = RunRemoteCommandWithSudo(client, fmt.Sprintf("sudo mkdir -p %s", remoteDir), sudoPassword)
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func TransferFileWithRoot(client *ssh.Client, localFilePath, remoteFilePath stri
     }
 
 	// Move the file to the desired location with root privileges
-	err = RunRemoteCommand(client, fmt.Sprintf("sudo mv /tmp/%s %s", fileName, remoteFilePath))
+	err = RunRemoteCommandWithSudo(client, fmt.Sprintf("sudo mv /tmp/%s %s", fileName, remoteFilePath), sudoPassword)
 	if err != nil {
 		return err
 	}

@@ -21,19 +21,20 @@ func NewAptManager(client *ssh.Client) *AptManager {
 }
 
 // UpdateRepo updates the apt package repository
-func (a *AptManager) UpdateRepo() error {
+func (a *AptManager) UpdateRepo(sudoPass string) error {
     command := fmt.Sprintf("sudo apt update")
-    return exec.RunRemoteCommand(a.Client, command)
+    // return exec.RunRemoteCommand(a.Client, command)
+    return exec.RunRemoteCommandWithSudo(a.Client, command, sudoPass)
 }
 
 // InstallPackage installs a package using apt
-func (a *AptManager) InstallPackage(packageName string) error {
+func (a *AptManager) InstallPackage(sudoPass string, packageName string) error {
     command := fmt.Sprintf("sudo apt install -y %s", packageName)
-    return exec.RunRemoteCommand(a.Client, command)
+    return exec.RunRemoteCommandWithSudo(a.Client, command, sudoPass)
 }
 
 // AddRepository adds a third-party repository to the system
-func (a *AptManager) AddRepository(repoName string, repoUrl string) error {
+func (a *AptManager) AddRepository(sudoPass string, repoName string, repoUrl string) error {
     // Check if the repository is already added
     checkCommand := fmt.Sprintf("grep -h '^deb .*%s' /etc/apt/sources.list /etc/apt/sources.list.d/*.list || true", repoUrl)
     output, err := exec.RunRemoteCommandWithOutput(a.Client, checkCommand)
@@ -48,11 +49,11 @@ func (a *AptManager) AddRepository(repoName string, repoUrl string) error {
 
     // Add the repository if not already added
     command := fmt.Sprintf("echo 'deb [signed-by=/etc/apt/keyrings/%s-apt-keyring.gpg] %s /' | sudo tee /etc/apt/sources.list.d/%s.list && sudo apt update", repoName, repoUrl, repoName)
-    return exec.RunRemoteCommand(a.Client, command)
+    return exec.RunRemoteCommandWithSudo(a.Client, command, sudoPass)
 }
 
 // InstallGPGKey installs a GPG key from a URL
-func (a *AptManager) InstallGPGKey(keyName string, keyURL string) error {
+func (a *AptManager) InstallGPGKey(sudoPass string, keyName string, keyURL string) error {
     // Check if the GPG key is already installed
     checkCommand := fmt.Sprintf("test -f /etc/apt/keyrings/%s-apt-keyring.gpg && echo 'exists' || true", keyName)
     output, err := exec.RunRemoteCommandWithOutput(a.Client, checkCommand)
@@ -67,7 +68,7 @@ func (a *AptManager) InstallGPGKey(keyName string, keyURL string) error {
 
     // Install the GPG key if not already installed
     command := fmt.Sprintf("curl -fsSL %s | sudo gpg --dearmor -o /etc/apt/keyrings/%s-apt-keyring.gpg", keyURL, keyName)
-    return exec.RunRemoteCommand(a.Client, command)
+    return exec.RunRemoteCommandWithSudo(a.Client, command, sudoPass)
 }
 
 // Check if a package is installed

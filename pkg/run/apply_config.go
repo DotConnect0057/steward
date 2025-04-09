@@ -118,7 +118,7 @@ func ApplyConfig(config *common.Config) error {
             mu.Unlock()
 
             // Update Repositories
-            err = aptman.UpdateRepo()
+            err = aptman.UpdateRepo(host.Password)
             if err != nil {
                 mu.Lock()
                 logger.Errorf("Error updating repositories on host %s: %v", host.Host, err)
@@ -135,7 +135,7 @@ func ApplyConfig(config *common.Config) error {
             // Install common standard packages
             // Iterate over and install each common standard package
             for _, pkg := range config.Common.Packages.Standard {
-                err := aptman.InstallPackage(pkg)
+                err := aptman.InstallPackage(host.Password, pkg)
                 if err != nil {
                     mu.Lock()
                     logger.Errorf("Error installing package %s on host %s: %v", pkg, host.Host, err)
@@ -152,7 +152,7 @@ func ApplyConfig(config *common.Config) error {
 
             // Install host-specific standard packages
             for _, pkg := range host.Packages.Standard {
-                err := aptman.InstallPackage(pkg)
+                err := aptman.InstallPackage(host.Password, pkg)
                 if err != nil {
                     mu.Lock()
                     logger.Errorf("Error installing package %s on host %s: %v", pkg, host.Host, err)
@@ -170,7 +170,7 @@ func ApplyConfig(config *common.Config) error {
             // Install common third-party packages
             for _, pkg := range config.Common.Packages.ThirdParty {
                 // Install the GPG key
-                err = aptman.InstallGPGKey(pkg.Name, pkg.GPGKeyURL)
+                err = aptman.InstallGPGKey(host.Password, pkg.Name, pkg.GPGKeyURL)
                 if err != nil {
                     mu.Lock()
                     logger.Errorf("Error installing GPG key %s on host %s: %v", pkg.Name, host.Host, err)
@@ -185,7 +185,7 @@ func ApplyConfig(config *common.Config) error {
                 mu.Unlock()
 
                 // Add the repository
-                err := aptman.AddRepository(pkg.Name, pkg.Repo)
+                err := aptman.AddRepository(host.Password, pkg.Name, pkg.Repo)
                 if err != nil {
                     mu.Lock()
                     logger.Errorf("Error adding repository %s on host %s: %v", pkg.Name, host.Host, err)
@@ -201,7 +201,7 @@ func ApplyConfig(config *common.Config) error {
                 logger.Infof("Install package %s on host %s", pkg.Name, host.Host)
                 mu.Unlock()
                 for _, dep := range pkg.Packages {
-                    err = aptman.InstallPackage(dep)
+                    err = aptman.InstallPackage(host.Password, dep)
                     if err != nil {
                         mu.Lock()
                         logger.Errorf("Error installing third-party package %s on host %s: %v", dep, host.Host, err)
@@ -300,7 +300,7 @@ func ApplyConfigWithProgress(config *common.Config) {
 			DisplayProgress(totalAllHostsTasks, completedTotalTasks, tasks, &mu)
 
 			// Update Repositories to avoid errors of missing links
-			err = aptman.UpdateRepo()
+			err = aptman.UpdateRepo(host.Password)
 			if err != nil {
 				mu.Lock()
 				logger.Errorf("Error updating repositories on host %s: %v", host.Host, err)
@@ -310,7 +310,7 @@ func ApplyConfigWithProgress(config *common.Config) {
 
             // Install common standard packages
             for _, pkg := range config.Common.Packages.Standard {
-                err := aptman.InstallPackage(pkg)
+                err := aptman.InstallPackage(host.Password, pkg)
                 if err != nil {
                     mu.Lock()
 					tasks[taskIndex].Status = "Error"
@@ -330,7 +330,7 @@ func ApplyConfigWithProgress(config *common.Config) {
 
 			// Install host-specific standard packages
 			for _, pkg := range host.Packages.Standard {
-				err := aptman.InstallPackage(pkg)
+				err := aptman.InstallPackage(host.Password, pkg)
 				if err != nil {
 					mu.Lock()
 					tasks[taskIndex].Status = "Error"
@@ -357,7 +357,7 @@ func ApplyConfigWithProgress(config *common.Config) {
 					mu.Unlock()
 				}
 				// Install the GPG key
-				err = aptman.InstallGPGKey(pkg.Name, pkg.GPGKeyURL)
+				err = aptman.InstallGPGKey(host.Password, pkg.Name, pkg.GPGKeyURL)
 				if err != nil {
 					mu.Lock()
 					tasks[taskIndex].Status = "Error"
@@ -369,7 +369,7 @@ func ApplyConfigWithProgress(config *common.Config) {
 				logger.Infof("Installed GPG key %s on host %s", pkg.Name, host.Host)
 				mu.Unlock()
 				// Add the repository
-				err = aptman.AddRepository(pkg.Name, pkg.Repo)
+				err = aptman.AddRepository(host.Password, pkg.Name, pkg.Repo)
 				if err != nil {
 					mu.Lock()
 					tasks[taskIndex].Status = "Error"
@@ -385,7 +385,7 @@ func ApplyConfigWithProgress(config *common.Config) {
 				logger.Infof("Install package %s on host %s", pkg.Name, host.Host)
 				mu.Unlock()
 				for _, dep := range pkg.Packages {
-					err = aptman.InstallPackage(dep)
+					err = aptman.InstallPackage(host.Password, dep)
 					if err != nil {
 						mu.Lock()
 						tasks[taskIndex].Status = "Error"
@@ -414,7 +414,7 @@ func ApplyConfigWithProgress(config *common.Config) {
 						return
 					}
 					if template.Sudo {
-						err = exec.TransferFileWithRoot(sshClient, template.OutputFile, template.RemoteFile)
+						err = exec.TransferFileWithRoot(sshClient, template.OutputFile, template.RemoteFile, host.Password)
 					} else {
 						err = exec.TransferFile(sshClient, template.OutputFile, template.RemoteFile)
 					}
@@ -446,7 +446,7 @@ func ApplyConfigWithProgress(config *common.Config) {
 						return
 					}
 					if template.Sudo {
-						err = exec.TransferFileWithRoot(sshClient, template.OutputFile, template.RemoteFile)
+						err = exec.TransferFileWithRoot(sshClient, template.OutputFile, template.RemoteFile, host.Password)
 					} else {
 						err = exec.TransferFile(sshClient, template.OutputFile, template.RemoteFile)
 					}
@@ -470,9 +470,9 @@ func ApplyConfigWithProgress(config *common.Config) {
 				// Run custom procedures
 				for _, procedure := range config.Common.CustomProcedures {
 					if procedure.Sudo {
-						err = exec.RunRemoteCommandWithValidation(sshClient, fmt.Sprintf("sudo %s", procedure.Command), procedure.ExpectedOutput, exec.LazyMatch)
+						err = exec.RunRemoteCommandWithSudoValidation(sshClient, fmt.Sprintf("sudo %s", procedure.Command), procedure.ExpectedOutput, exec.LazyMatch, host.Password)
 					} else {
-						err = exec.RunRemoteCommandWithValidation(sshClient, procedure.Command, procedure.ExpectedOutput, exec.LazyMatch)
+						err = exec.RunRemoteCommandWithSudoValidation(sshClient, procedure.Command, procedure.ExpectedOutput, exec.LazyMatch, host.Password)
 					}
 					if err != nil {
 						mu.Lock()
