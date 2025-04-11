@@ -279,7 +279,7 @@ func ApplyConfigWithProgress(config *common.Config) {
 			logger.Infof("Starting task for host: %s", host.Host)
 
             // SSH client configuration
-            sshClient, err := exec.SetupSSHClient(host.Host, "22", host.User, host.Password, "")
+            sshClient, err := exec.SetupSSHClient(host.Host, host.Port, host.User, host.Password, "")
             if err != nil {
                 mu.Lock()
                 logger.Errorf("Error setting up SSH client for host %s: %v", host.Host, err)
@@ -402,99 +402,98 @@ func ApplyConfigWithProgress(config *common.Config) {
 					tasks[taskIndex].Status = "In Progress"
 					DisplayProgress(totalAllHostsTasks, completedTotalTasks, tasks, &mu)
 				}
-
-				// Generate and Transfer common configuration files
-				for _, template := range config.Common.Templates {
-					err := common.GenerateConfig(template.TemplateFile, template.OutputFile, template.Data)
-					if err != nil {
-						mu.Lock()
-						tasks[taskIndex].Status = "Error"
-						logger.Errorf("Error generating config for host %s, template: %s, %v", template.TemplateFile, host.Host, err)
-						mu.Unlock()
-						return
-					}
-					if template.Sudo {
-						err = exec.TransferFileWithRoot(sshClient, template.OutputFile, template.RemoteFile, host.Password)
-					} else {
-						err = exec.TransferFile(sshClient, template.OutputFile, template.RemoteFile)
-					}
-					if err != nil {
-						mu.Lock()
-						tasks[taskIndex].Status = "Error"
-						logger.Errorf("Error transferring file %s to host %s: %v", template.OutputFile, host.Host, err)
-						mu.Unlock()
-						return
-					}
-					// mu.Lock()
-					// logger.Infof("Generated config file for host %s: %s", host.Host, template.OutputFile)
-					// mu.Unlock()
-					completedTemplateTasks++
-					completedTotalTasks++
-					tasks[taskIndex].Templates = fmt.Sprintf("%d/%d", completedTemplateTasks, tasks[taskIndex].TemplateTasks)
-					tasks[taskIndex].Status = "In Progress"
-					DisplayProgress(totalAllHostsTasks, completedTotalTasks, tasks, &mu)
-				}
-
-				// Generate and Transfer host-specific configuration files
-				for _, template := range host.Templates {
-					err := common.GenerateConfig(template.TemplateFile, template.OutputFile, template.Data)
-					if err != nil {
-						mu.Lock()
-						tasks[taskIndex].Status = "Error"
-						logger.Errorf("Error generating config for host %s: %v", host.Host, err)
-						mu.Unlock()
-						return
-					}
-					if template.Sudo {
-						err = exec.TransferFileWithRoot(sshClient, template.OutputFile, template.RemoteFile, host.Password)
-					} else {
-						err = exec.TransferFile(sshClient, template.OutputFile, template.RemoteFile)
-					}
-					if err != nil {
-						mu.Lock()
-						tasks[taskIndex].Status = "Error"
-						logger.Errorf("Error transferring file %s to host %s: %v", template.OutputFile, host.Host, err)
-						mu.Unlock()
-						return
-					}
-					// mu.Lock()
-					// logger.Infof("Generated config file for host %s: %s", host.Host, template.OutputFile)
-					// mu.Unlock()
-					completedTemplateTasks++
-					completedTotalTasks++
-					tasks[taskIndex].Templates = fmt.Sprintf("%d/%d", completedTemplateTasks, tasks[taskIndex].TemplateTasks)
-					tasks[taskIndex].Status = "In Progress"
-					DisplayProgress(totalAllHostsTasks, completedTotalTasks, tasks, &mu)	
-				}
-
-				// Run custom procedures
-				for _, procedure := range config.Common.CustomProcedures {
-					if procedure.Sudo {
-						err = exec.RunRemoteCommandWithSudoValidation(sshClient, fmt.Sprintf("sudo %s", procedure.Command), procedure.ExpectedOutput, exec.LazyMatch, host.Password)
-					} else {
-						err = exec.RunRemoteCommandWithSudoValidation(sshClient, procedure.Command, procedure.ExpectedOutput, exec.LazyMatch, host.Password)
-					}
-					if err != nil {
-						mu.Lock()
-						tasks[taskIndex].Status = "Error"
-						logger.Errorf("Error running custom procedure %s on host %s: %v", procedure.Command, host.Host, err)
-						mu.Unlock()
-						return
-					}
-					mu.Lock()
-					logger.Infof("Run custom procedure %s on host %s", procedure.Command, host.Host)
-					mu.Unlock()
-					completedProcedureTasks++
-					completedTotalTasks++
-					tasks[taskIndex].Procedures = fmt.Sprintf("%d/%d", completedProcedureTasks, tasks[taskIndex].ProcedureTasks)
-					tasks[taskIndex].Status = "In Progress"
-					DisplayProgress(totalAllHostsTasks, completedTotalTasks, tasks, &mu)
-				}
-
-				tasks[taskIndex].Status = "Completed"
-				DisplayProgress(totalAllHostsTasks, completedTotalTasks, tasks, &mu)
-
 			}
+
+			// Generate and Transfer common configuration files
+			for _, template := range config.Common.Templates {
+				err := common.GenerateConfig(template.TemplateFile, template.OutputFile, template.Data)
+				if err != nil {
+					mu.Lock()
+					tasks[taskIndex].Status = "Error"
+					logger.Errorf("Error generating config for host %s, template: %s, %v", template.TemplateFile, host.Host, err)
+					mu.Unlock()
+					return
+				}
+				if template.Sudo {
+					err = exec.TransferFileWithRoot(sshClient, template.OutputFile, template.RemoteFile, host.Password)
+				} else {
+					err = exec.TransferFile(sshClient, template.OutputFile, template.RemoteFile)
+				}
+				if err != nil {
+					mu.Lock()
+					tasks[taskIndex].Status = "Error"
+					logger.Errorf("Error transferring file %s to host %s: %v", template.OutputFile, host.Host, err)
+					mu.Unlock()
+					return
+				}
+				// mu.Lock()
+				// logger.Infof("Generated config file for host %s: %s", host.Host, template.OutputFile)
+				// mu.Unlock()
+				completedTemplateTasks++
+				completedTotalTasks++
+				tasks[taskIndex].Templates = fmt.Sprintf("%d/%d", completedTemplateTasks, tasks[taskIndex].TemplateTasks)
+				tasks[taskIndex].Status = "In Progress"
+				DisplayProgress(totalAllHostsTasks, completedTotalTasks, tasks, &mu)
+			}
+
+			// Generate and Transfer host-specific configuration files
+			for _, template := range host.Templates {
+				err := common.GenerateConfig(template.TemplateFile, template.OutputFile, template.Data)
+				if err != nil {
+					mu.Lock()
+					tasks[taskIndex].Status = "Error"
+					logger.Errorf("Error generating config for host %s: %v", host.Host, err)
+					mu.Unlock()
+					return
+				}
+				if template.Sudo {
+					err = exec.TransferFileWithRoot(sshClient, template.OutputFile, template.RemoteFile, host.Password)
+				} else {
+					err = exec.TransferFile(sshClient, template.OutputFile, template.RemoteFile)
+				}
+				if err != nil {
+					mu.Lock()
+					tasks[taskIndex].Status = "Error"
+					logger.Errorf("Error transferring file %s to host %s: %v", template.OutputFile, host.Host, err)
+					mu.Unlock()
+					return
+				}
+				// mu.Lock()
+				// logger.Infof("Generated config file for host %s: %s", host.Host, template.OutputFile)
+				// mu.Unlock()
+				completedTemplateTasks++
+				completedTotalTasks++
+				tasks[taskIndex].Templates = fmt.Sprintf("%d/%d", completedTemplateTasks, tasks[taskIndex].TemplateTasks)
+				tasks[taskIndex].Status = "In Progress"
+				DisplayProgress(totalAllHostsTasks, completedTotalTasks, tasks, &mu)	
+			}
+
+			// Run custom procedures
+			for _, procedure := range config.Common.CustomProcedures {
+				if procedure.Sudo {
+					err = exec.RunRemoteCommandWithSudoValidation(sshClient, fmt.Sprintf("sudo %s", procedure.Command), procedure.ExpectedOutput, exec.LazyMatch, host.Password)
+				} else {
+					err = exec.RunRemoteCommandWithSudoValidation(sshClient, procedure.Command, procedure.ExpectedOutput, exec.LazyMatch, host.Password)
+				}
+				if err != nil {
+					mu.Lock()
+					tasks[taskIndex].Status = "Error"
+					logger.Errorf("Error running custom procedure %s on host %s: %v", procedure.Command, host.Host, err)
+					mu.Unlock()
+					return
+				}
+				mu.Lock()
+				logger.Infof("Run custom procedure %s on host %s", procedure.Command, host.Host)
+				mu.Unlock()
+				completedProcedureTasks++
+				completedTotalTasks++
+				tasks[taskIndex].Procedures = fmt.Sprintf("%d/%d", completedProcedureTasks, tasks[taskIndex].ProcedureTasks)
+				tasks[taskIndex].Status = "In Progress"
+				DisplayProgress(totalAllHostsTasks, completedTotalTasks, tasks, &mu)
+			}
+
+			tasks[taskIndex].Status = "Completed"
+			DisplayProgress(totalAllHostsTasks, completedTotalTasks, tasks, &mu)
 
         }(i, host)
     }

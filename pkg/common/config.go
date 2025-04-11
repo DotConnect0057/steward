@@ -20,6 +20,7 @@ type CustomProcedures []CustomProcedure
 // Config represents the structure of the configuration file
 type Host struct {
     Host              string `yaml:"host" json:"host"`
+    Port              string `yaml:"port" json:"port"`
     User              string `yaml:"user" json:"user"`
     Password          string `yaml:"password" json:"password"`
     SSHKey            string `yaml:"ssh_key,omitempty" json:"ssh_key,omitempty"`

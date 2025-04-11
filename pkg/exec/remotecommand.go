@@ -56,7 +56,7 @@ func SetupSSHClient(host string, port string, user string, password string, keyP
     // Connect to the SSH server
     client, err := ssh.Dial("tcp", host+":"+port, sshConfig)
     if err != nil {
-        return nil, fmt.Errorf("failed to connect to SSH server: %v", err)
+        return nil, fmt.Errorf("failed to connect to SSH server: %s, %s, %v",host, port, err)
     }
 
     return client, nil
