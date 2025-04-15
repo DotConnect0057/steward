@@ -26,11 +26,21 @@ to the user about the progress of the application process.`,
 
 		// Apply the configuration
 		// err = run.ApplyConfig(config)
-		run.ApplyConfigWithProgress(config)
-		// if err != nil {
-		// 	logger.Errorf("Failed to apply configuration: %v", err)
-		// }
+		updatedConfig := run.ApplyConfigWithProgress(config)
+		if updatedConfig == nil {
+			logger.Errorf("Failed to apply configuration")
+			return
+		}
 		logger.Infof("Configuration applied successfully")
+		logger.Infof("Updated configuration: %v", updatedConfig)
+
+		// update config file with updatedConfig
+		err = common.UpdateConfigFile("steward-config/config.yaml", updatedConfig)
+		if err != nil {
+			logger.Errorf("Failed to update config file: %v", err)
+			return
+		}
+		logger.Infof("Configuration file updated successfully")
 	},
 }
 

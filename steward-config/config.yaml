@@ -1,25 +1,30 @@
 common:
     packages:
         standard:
-            - apt-transport-https
-            - ca-certificates
-            - curl
-            - gpg
+            apt-transport-https: 2.7.14build2
+            ca-certificates: "20240203"
+            curl: 8.5.0-2ubuntu10.6
+            gpg: 2.4.4-2ubuntu17.2
         third_party:
-            - gpg_key_url: https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key
-              name: kubernetes
-              packages:
-                - kubeadm
-                - kubelet
-                - kubectl
+            - name: kubernetes
+              gpg_key_url: https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key
               repo: https://pkgs.k8s.io/core:/stable:/v1.32/deb/
-            - gpg_key_url: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/Release.key
-              name: cri-o
               packages:
-                - cri-o
+                kubeadm: 1.32.3-1.1
+                kubectl: 1.32.3-1.1
+                kubelet: 1.32.3-1.1
+            - name: cri-o
+              gpg_key_url: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/Release.key
               repo: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/
+              packages:
+                cri-o: 1.32.1-1.1
     templates:
-        - data:
+        - name: haproxy
+          template_file: ./config/template/haproxy_template.cfg
+          output_file: ./config/output/haproxy.cfg
+          remote_file: /etc/haproxy/haproxy.cfg
+          sudo: true
+          data:
             backends:
                 - address: 192.168.0.101
                   name: lab-101
@@ -30,166 +35,130 @@ common:
                 - address: 192.168.0.103
                   name: lab-103
                   port: 16443
-          name: haproxy
-          output_file: ./config/output/haproxy.cfg
-          remote_file: /etc/haproxy/haproxy.cfg
-          sudo: true
-          template_file: ./config/template/haproxy_template.cfg
-        - data:
-            port: 16443
-          name: check_apiserver
+        - name: check_apiserver
+          template_file: ./config/template/check_apiserver_template.sh
           output_file: ./config/output/check_apiserver.sh
           remote_file: /etc/keepalived/check_apiserver.sh
           sudo: true
-          template_file: ./config/template/check_apiserver_template.sh
+          data:
+            port: 16443
         - name: keepalived_manifest
+          template_file: ./config/template/keepalived_manifest.yaml
           output_file: ./config/output/keepalived_manifest.yaml
           remote_file: /etc/kubernetes/manifests/keepalived.yaml
           sudo: true
-          template_file: ./config/template/keepalived_manifest.yaml
-        - data:
-            port: 16443
-          name: haproxy_manifest
+          data: null
+        - name: haproxy_manifest
+          template_file: ./config/template/haproxy_manifest.yaml
           output_file: ./config/output/haproxy_manifest.yaml
           remote_file: /etc/kubernetes/manifests/haproxy.yaml
           sudo: true
-          template_file: ./config/template/haproxy_manifest.yaml
+          data:
+            port: 16443
     custom_procedures:
         - name: crio
-          command: "systemctl start crio.service"
+          command: systemctl start crio.service
           expected_output: ""
           sudo: true
         - name: install_k8s
-          command: "swapoff -a"
+          command: swapoff -a
           expected_output: ""
           sudo: true
         - name: install_k8s
-          command: "modprobe br_netfilter"
+          command: modprobe br_netfilter
           expected_output: ""
           sudo: true
         - name: install_k8s
-          command: "sysctl -w net.ipv4.ip_forward=1"
+          command: sysctl -w net.ipv4.ip_forward=1
           expected_output: ""
           sudo: true
-
 hosts:
-    # - host: 192.168.100.14
-    #   packages:
-    #     standard:
-    #         - nginx
-    #     third_party:
-    #         - gpg_key_url: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/Release.key
-    #           name: cri-o
-    #           packages:
-    #             - cri-o
-    #           repo: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/
-    #   password: admin
-    #   templates:
-    #     - data:
-    #         interface: eth0
-    #         priority: 100
-    #         state: MASTER
-    #         virtual_ip: 172.18.149.100
-    #       name: keepalived
-    #       output_file: ./config/output/keepalived.cfg
-    #       remote_file: /etc/keepalived/keepalived.conf
-    #       sudo: true
-    #       template_file: ./config/template/keepalived_template.cfg
-    #   user: admin
-    # - host: 192.168.100.106
     - host: localhost
-      port: 2022
+      port: "2022"
+      user: lab
+      password: lab
       packages:
         standard:
-            - nginx
-            - vim
+            nginx: 1.24.0-2ubuntu7.3
+            vim: 2:9.1.0016-1ubuntu7.8
         third_party:
-            - gpg_key_url: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/Release.key
-              name: cri-o
-              packages:
-                - cri-o
+            - name: cri-o
+              gpg_key_url: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/Release.key
               repo: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/
-      password: lab
+              packages:
+                cri-o: 1.32.1-1.1
       templates:
-        - data:
+        - name: keepalived
+          template_file: ./config/template/keepalived_template.cfg
+          output_file: ./config/output/keepalived_node101.cfg
+          remote_file: /etc/keepalived/keepalived.conf
+          sudo: true
+          data:
             interface: eth0
             priority: 100
             state: MASTER
             virtual_ip: 192.168.0.100
-          name: keepalived
-          output_file: ./config/output/keepalived.cfg
-          remote_file: /etc/keepalived/keepalived.conf
-          sudo: true
-          template_file: ./config/template/keepalived_template.cfg
         - name: kubelet
-          data:
-            ip: 192.168.0.101
+          template_file: ./config/template/kubelet_template
           output_file: ./config/output/kubelet-101
           remote_file: /etc/default/kubelet
           sudo: true
-          template_file: ./config/template/kubelet_template
-      user: lab
+          data:
+            ip: 192.168.0.101
+      custom_procedures: []
     - host: localhost
-      port: 2122
+      port: "2122"
+      user: lab
+      password: lab
       packages:
         standard:
-            - nginx
-            - vim
-        third_party:
-            - gpg_key_url: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/Release.key
-              name: cri-o
-              packages:
-                - cri-o
-              repo: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/
-      password: lab
+            nginx: 1.24.0-2ubuntu7.3
+            vim: 2:9.1.0016-1ubuntu7.8
+        third_party: []
       templates:
-        - data:
+        - name: keepalived
+          template_file: ./config/template/keepalived_template.cfg
+          output_file: ./config/output/keepalived_node102.cfg
+          remote_file: /etc/keepalived/keepalived.conf
+          sudo: true
+          data:
             interface: eth0
             priority: 110
             state: BACKUP
             virtual_ip: 192.168.0.100
-          name: keepalived
-          output_file: ./config/output/keepalived.cfg
-          remote_file: /etc/keepalived/keepalived.conf
-          sudo: true
-          template_file: ./config/template/keepalived_template.cfg
         - name: kubelet
-          data:
-            ip: 192.168.0.102
+          template_file: ./config/template/kubelet_template
           output_file: ./config/output/kubelet-102
           remote_file: /etc/default/kubelet
           sudo: true
-          template_file: ./config/template/kubelet_template
-      user: lab
+          data:
+            ip: 192.168.0.102
+      custom_procedures: []
     - host: localhost
-      port: 2222
+      port: "2222"
+      user: lab
+      password: lab
       packages:
         standard:
-            - nginx
-            - vim
-        third_party:
-            - gpg_key_url: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/Release.key
-              name: cri-o
-              packages:
-                - cri-o
-              repo: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/
-      password: lab
+            nginx: 1.24.0-2ubuntu7.3
+            vim: 2:9.1.0016-1ubuntu7.8
+        third_party: []
       templates:
-        - data:
+        - name: keepalived
+          template_file: ./config/template/keepalived_template.cfg
+          output_file: ./config/output/keepalived_node103.cfg
+          remote_file: /etc/keepalived/keepalived.conf
+          sudo: true
+          data:
             interface: eth0
             priority: 110
             state: BACKUP
             virtual_ip: 192.168.0.100
-          name: keepalived
-          output_file: ./config/output/keepalived.cfg
-          remote_file: /etc/keepalived/keepalived.conf
-          sudo: true
-          template_file: ./config/template/keepalived_template.cfg
         - name: kubelet
-          data:
-            ip: 192.168.0.103
+          template_file: ./config/template/kubelet_template
           output_file: ./config/output/kubelet-103
           remote_file: /etc/default/kubelet
           sudo: true
-          template_file: ./config/template/kubelet_template
-      user: lab
+          data:
+            ip: 192.168.0.103
+      custom_procedures: []

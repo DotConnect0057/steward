@@ -25,12 +25,12 @@ type Host struct {
     Password          string `yaml:"password" json:"password"`
     SSHKey            string `yaml:"ssh_key,omitempty" json:"ssh_key,omitempty"`
     Packages          struct {
-        Standard          []string `yaml:"standard" json:"standard"`
+        Standard          map[string]string `yaml:"standard" json:"standard"`
         ThirdParty []struct {
             Name       string   `yaml:"name" json:"name"`
             GPGKeyURL  string   `yaml:"gpg_key_url" json:"gpg_key_url"`
             Repo       string   `yaml:"repo" json:"repo"`
-            Packages   []string `yaml:"packages" json:"packages"`
+            Packages   map[string]string `yaml:"packages" json:"packages"`
         } `yaml:"third_party" json:"third_party"`
     } `yaml:"packages" json:"packages"`
     Templates []struct {
@@ -51,12 +51,13 @@ type Hosts []Host
 type Config struct {
     Common struct {
         Packages struct {
-            Standard   []string `yaml:"standard" json:"standard"`
+            // Standard   []string `yaml:"standard" json:"standard"`
+            Standard   map[string]string `yaml:"standard" json:"standard"`
             ThirdParty []struct {
                 Name       string   `yaml:"name" json:"name"`
                 GPGKeyURL  string   `yaml:"gpg_key_url" json:"gpg_key_url"`
                 Repo       string   `yaml:"repo" json:"repo"`
-                Packages   []string `yaml:"packages" json:"packages"`
+                Packages   map[string]string `yaml:"packages" json:"packages"`
             } `yaml:"third_party" json:"third_party"`
         } `yaml:"packages" json:"packages"`
         Templates []struct {
@@ -121,6 +122,34 @@ func LoadConfig(filePath string) (*Config, error) {
     }
 
     return &config, nil
+}
+
+// This function overwrites the existing file with the new data
+func UpdateConfigFile(filePath string, config *Config) error {
+    // Open the file for writing
+    file, err := os.Create(filePath+".tmp")
+    if err != nil {
+        return fmt.Errorf("failed to open config file for writing: %w", err)
+    }
+    defer file.Close()
+
+    // Write the config data to the file
+    if isYAML(filePath) {
+        encoder := yaml.NewEncoder(file)
+        defer encoder.Close()
+        if err := encoder.Encode(config); err != nil {
+            return fmt.Errorf("failed to write YAML config: %w", err)
+        }
+    } else if isJSON(filePath) {
+        encoder := json.NewEncoder(file)
+        if err := encoder.Encode(config); err != nil {
+            return fmt.Errorf("failed to write JSON config: %w", err)
+        }
+    } else {
+        return fmt.Errorf("unsupported config file format: %s", filePath)
+    }
+
+    return nil
 }
 
 // isYAML checks if the file is a YAML file based on its extension

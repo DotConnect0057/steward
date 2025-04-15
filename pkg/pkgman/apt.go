@@ -84,3 +84,28 @@ func (a *AptManager) IsPackageInstalled(packageName string) (bool, error) {
     }
     return false, nil
 }
+
+// FetchInstalledVersion fetches the installed version of a package and updates a configuration file
+func (a *AptManager) FetchInstalledVersion(packageName string) (string, error) {
+    // Check if the package is installed
+    isInstalled, err := a.IsPackageInstalled(packageName)
+    if err != nil {
+        return "", fmt.Errorf("failed to check if package is installed: %w", err)
+    }
+
+    if !isInstalled {
+        return "", fmt.Errorf("package '%s' is not installed", packageName)
+    }
+
+    // Fetch the installed version of the package
+    command := fmt.Sprintf("dpkg -l | grep '^ii' | grep ' %s ' | awk '{print $3}'", packageName)
+    version, err := exec.RunRemoteCommandWithOutput(a.Client, command)
+    if err != nil {
+        return "", fmt.Errorf("failed to fetch installed version of package '%s': %w", packageName, err)
+    }
+
+    version = strings.TrimSpace(version) // Remove any trailing whitespace
+
+    // Return new package name with version which installed
+    return fmt.Sprintf("%s", version), nil 
+}

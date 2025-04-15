@@ -42,9 +42,9 @@ func DisplayProgress(totalTasks int, completedTasks int,  tasks []TaskStatus, mu
     fmt.Print("\033[H\033[2J")
 
     // Print the header
-    // fmt.Fprintln(writer, "TASK\tSTATUS\tPROGRESS")
     fmt.Fprintf(writer, "Total Task: %d\tCompleted Task: %d\t\n", totalTasks, completedTasks)
-    fmt.Fprintf(writer, "----------------------------------------------------\n")
+    fmt.Fprintf(writer, "\n")
+    fmt.Fprintf(writer, "HOST\tINSTALL\tCONFIG\tPROCEDURE\tSTATUS\n")
 
     // Print each task's status
     mu.Lock()
@@ -226,18 +226,22 @@ func ApplyConfig(config *common.Config) error {
     return firstError
 }
 
-func ApplyConfigWithProgress(config *common.Config) {
+func ApplyConfigWithProgress(config *common.Config) (*common.Config) {
     // Initialize task statuses
     var tasks []TaskStatus
     for _, host := range config.Hosts {
 
 		// Count the number of third-party packages for common each host
 		thirdPartyPkgCount := 0
+		hostThirdPartyPkgCount := 0
 		for _, pkg := range config.Common.Packages.ThirdParty {
 			thirdPartyPkgCount += len(pkg.Packages)
-		}		
+		}
+		for _, pkg := range host.Packages.ThirdParty {
+			hostThirdPartyPkgCount += len(pkg.Packages)
+		}
 
-		pkgTasks := len(host.Packages.Standard) + len(config.Common.Packages.Standard) + thirdPartyPkgCount
+		pkgTasks := len(host.Packages.Standard) + len(config.Common.Packages.Standard) + thirdPartyPkgCount + hostThirdPartyPkgCount
 		templateTasks := len(config.Common.Templates) + len(host.Templates)
 		procedureTasks := len(config.Common.CustomProcedures)
 
@@ -283,6 +287,7 @@ func ApplyConfigWithProgress(config *common.Config) {
             if err != nil {
                 mu.Lock()
                 logger.Errorf("Error setting up SSH client for host %s: %v", host.Host, err)
+				tasks[taskIndex].Status = "Error"
                 mu.Unlock()
                 return
             }
@@ -309,8 +314,14 @@ func ApplyConfigWithProgress(config *common.Config) {
 			}
 
             // Install common standard packages
-            for _, pkg := range config.Common.Packages.Standard {
-                err := aptman.InstallPackage(host.Password, pkg)
+            for pkg, ver := range config.Common.Packages.Standard {
+				fullPkgName := ""
+				if ver != "" {
+					fullPkgName = pkg + "=" + ver
+				} else {
+					fullPkgName = pkg
+				}
+                err := aptman.InstallPackage(host.Password, fullPkgName)
                 if err != nil {
                     mu.Lock()
 					tasks[taskIndex].Status = "Error"
@@ -319,8 +330,17 @@ func ApplyConfigWithProgress(config *common.Config) {
                     return
                 }
                 mu.Lock()
-                logger.Infof("Installed package %s on host %s", pkg, host.Host)
+				pkgVersion, errName := aptman.FetchInstalledVersion(pkg)
+				if errName != nil {
+					logger.Errorf("Error fetching installed version for package %s on host %s: %v", pkg, host.Host, errName)
+					mu.Unlock()
+					return
+				}
+				// replace pkg name in config with new package name
+				config.Common.Packages.Standard[pkg] = pkgVersion
+                logger.Infof("Installed package %s on host %s", pkg+"="+pkgVersion, host.Host)
                 mu.Unlock()
+
 				completedPkgTasks++
 				completedTotalTasks++
 				tasks[taskIndex].Packages = fmt.Sprintf("%d/%d", completedPkgTasks, tasks[taskIndex].PkgTasks)
@@ -329,8 +349,14 @@ func ApplyConfigWithProgress(config *common.Config) {
             }
 
 			// Install host-specific standard packages
-			for _, pkg := range host.Packages.Standard {
-				err := aptman.InstallPackage(host.Password, pkg)
+			for pkg, ver := range host.Packages.Standard {
+				fullPkgName := ""
+				if ver != "" {
+					fullPkgName = pkg + "=" + ver
+				} else {
+					fullPkgName = pkg
+				}
+				err := aptman.InstallPackage(host.Password, fullPkgName)
 				if err != nil {
 					mu.Lock()
 					tasks[taskIndex].Status = "Error"
@@ -339,7 +365,15 @@ func ApplyConfigWithProgress(config *common.Config) {
 					return
 				}
 				mu.Lock()
-				logger.Infof("Installed package %s on host %s", pkg, host.Host)
+				pkgVersion, errName := aptman.FetchInstalledVersion(pkg)
+				if errName != nil {
+					logger.Errorf("Error fetching installed version for package %s on host %s: %v", pkg, host.Host, errName)
+					mu.Unlock()
+					return
+				}
+				// replace pkg name in config with new package name
+				config.Hosts[i].Packages.Standard[pkg] = pkgVersion
+                logger.Infof("Installed package %s on host %s", pkg+"="+pkgVersion, host.Host)
 				mu.Unlock()
 				completedPkgTasks++
 				completedTotalTasks++
@@ -349,7 +383,7 @@ func ApplyConfigWithProgress(config *common.Config) {
 			}
 
 			// Install common third-party packages
-			for _, pkg := range config.Common.Packages.ThirdParty {
+			for p, pkg := range config.Common.Packages.ThirdParty {
 				// Install the GPG key skip if empty
 				if pkg.GPGKeyURL == "" {
 					mu.Lock()
@@ -384,8 +418,14 @@ func ApplyConfigWithProgress(config *common.Config) {
 				mu.Lock()
 				logger.Infof("Install package %s on host %s", pkg.Name, host.Host)
 				mu.Unlock()
-				for _, dep := range pkg.Packages {
-					err = aptman.InstallPackage(host.Password, dep)
+				for dep, ver := range pkg.Packages {
+					fullPkgName := ""
+					if ver != "" {
+						fullPkgName = dep + "=" + ver
+					} else {
+						fullPkgName = dep
+					}	
+					err = aptman.InstallPackage(host.Password, fullPkgName)
 					if err != nil {
 						mu.Lock()
 						tasks[taskIndex].Status = "Error"
@@ -394,7 +434,85 @@ func ApplyConfigWithProgress(config *common.Config) {
 						return
 					}
 					mu.Lock()
-					logger.Infof("Installed third-party package %s on host %s", dep, host.Host)
+					pkgVersion, errName := aptman.FetchInstalledVersion(dep)
+					if errName != nil {
+						logger.Errorf("Error fetching installed version for package %s on host %s: %v", dep, host.Host, errName)
+						mu.Unlock()
+						return
+					}
+					// replace pkg name in config with new package name
+					config.Common.Packages.ThirdParty[p].Packages[dep] = pkgVersion
+					logger.Infof("Installed third-party package %s on host %s", dep+"="+pkgVersion, host.Host)
+					mu.Unlock()
+					completedPkgTasks++
+					completedTotalTasks++
+					tasks[taskIndex].Packages = fmt.Sprintf("%d/%d", completedPkgTasks, tasks[taskIndex].PkgTasks)
+					tasks[taskIndex].Status = "In Progress"
+					DisplayProgress(totalAllHostsTasks, completedTotalTasks, tasks, &mu)
+				}
+			}
+
+			// Install host-specific third-party packages
+			for p, pkg := range host.Packages.ThirdParty {
+				// Install the GPG key skip if empty
+				if pkg.GPGKeyURL == "" {
+					mu.Lock()
+					logger.Infof("GPG key URL is empty for package %s on host %s, skipping installation", pkg.Name, host.Host)
+					mu.Unlock()
+				}
+				// Install the GPG key
+				err = aptman.InstallGPGKey(host.Password, pkg.Name, pkg.GPGKeyURL)
+				if err != nil {
+					mu.Lock()
+					tasks[taskIndex].Status = "Error"
+					logger.Errorf("Error installing GPG key %s on host %s: %v", pkg.Name, host.Host, err)
+					mu.Unlock()
+					return
+				}
+				mu.Lock()
+				logger.Infof("Installed GPG key %s on host %s", pkg.Name, host.Host)
+				mu.Unlock()
+				// Add the repository
+				err = aptman.AddRepository(host.Password, pkg.Name, pkg.Repo)
+				if err != nil {
+					mu.Lock()
+					tasks[taskIndex].Status = "Error"
+					logger.Errorf("Error adding repository %s on host %s: %v", pkg.Name, host.Host, err)
+					mu.Unlock()
+					return
+				}
+				mu.Lock()
+				logger.Infof("Added repository %s on host %s", pkg.Name, host.Host)
+				mu.Unlock()
+				// Install the package
+				mu.Lock()
+				logger.Infof("Install package %s on host %s", pkg.Name, host.Host)
+				mu.Unlock()
+				for dep, ver := range pkg.Packages {
+					fullPkgName := ""
+					if ver != "" {
+						fullPkgName = dep + "=" + ver
+					} else {
+						fullPkgName = dep
+					}	
+					err = aptman.InstallPackage(host.Password, fullPkgName)
+					if err != nil {
+						mu.Lock()
+						tasks[taskIndex].Status = "Error"
+						logger.Errorf("Error installing third-party package %s on host %s: %v", dep, host.Host, err)
+						mu.Unlock()
+						return
+					}
+					mu.Lock()
+					pkgVersion, errName := aptman.FetchInstalledVersion(dep)
+					if errName != nil {
+						logger.Errorf("Error fetching installed version for package %s on host %s: %v", dep, host.Host, errName)
+						mu.Unlock()
+						return
+					}
+					// replace pkg name in config with new package name
+					config.Hosts[i].Packages.ThirdParty[p].Packages[dep] = pkgVersion
+					logger.Infof("Installed third-party package %s on host %s", dep+"="+pkgVersion, host.Host)
 					mu.Unlock()
 					completedPkgTasks++
 					completedTotalTasks++
@@ -503,6 +621,7 @@ func ApplyConfigWithProgress(config *common.Config) {
 
     // Final display
     DisplayProgress(totalAllHostsTasks, completedTotalTasks, tasks, &mu)
+	return config
 
 }
 
