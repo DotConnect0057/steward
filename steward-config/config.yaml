@@ -1,11 +1,11 @@
 common:
-    packages:
-        standard:
+    application:
+        core:
             apt-transport-https: 2.7.14build2
             ca-certificates: "20240203"
             curl: 8.5.0-2ubuntu10.6
             gpg: 2.4.4-2ubuntu17.2
-        third_party:
+        external:
             - name: kubernetes
               gpg_key_url: https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key
               repo: https://pkgs.k8s.io/core:/stable:/v1.32/deb/
@@ -18,7 +18,7 @@ common:
               repo: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/
               packages:
                 cri-o: 1.32.1-1.1
-    templates:
+    configuration:
         - name: haproxy
           template_file: ./config/template/haproxy_template.cfg
           output_file: ./config/output/haproxy.cfg
@@ -55,7 +55,7 @@ common:
           sudo: true
           data:
             port: 16443
-    custom_procedures:
+    command:
         - name: crio
           command: systemctl start crio.service
           expected_output: ""
@@ -77,17 +77,17 @@ hosts:
       port: "2022"
       user: lab
       password: lab
-      packages:
-        standard:
+      application:
+        core:
             nginx: 1.24.0-2ubuntu7.3
             vim: 2:9.1.0016-1ubuntu7.8
-        third_party:
+        external:
             - name: cri-o
               gpg_key_url: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/Release.key
               repo: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/
               packages:
                 cri-o: 1.32.1-1.1
-      templates:
+      configuration:
         - name: keepalived
           template_file: ./config/template/keepalived_template.cfg
           output_file: ./config/output/keepalived_node101.cfg
@@ -105,17 +105,17 @@ hosts:
           sudo: true
           data:
             ip: 192.168.0.101
-      custom_procedures: []
+      command: []
     - host: localhost
       port: "2122"
       user: lab
       password: lab
-      packages:
-        standard:
+      application:
+        core:
             nginx: 1.24.0-2ubuntu7.3
             vim: 2:9.1.0016-1ubuntu7.8
-        third_party: []
-      templates:
+        external: []
+      configuration:
         - name: keepalived
           template_file: ./config/template/keepalived_template.cfg
           output_file: ./config/output/keepalived_node102.cfg
@@ -133,17 +133,17 @@ hosts:
           sudo: true
           data:
             ip: 192.168.0.102
-      custom_procedures: []
+      command: []
     - host: localhost
       port: "2222"
       user: lab
       password: lab
-      packages:
-        standard:
+      applcation:
+        core:
             nginx: 1.24.0-2ubuntu7.3
             vim: 2:9.1.0016-1ubuntu7.8
-        third_party: []
-      templates:
+        external: []
+      configuration:
         - name: keepalived
           template_file: ./config/template/keepalived_template.cfg
           output_file: ./config/output/keepalived_node103.cfg
@@ -161,4 +161,4 @@ hosts:
           sudo: true
           data:
             ip: 192.168.0.103
-      custom_procedures: []
+      command: []

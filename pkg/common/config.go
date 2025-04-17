@@ -8,92 +8,58 @@ import (
     "gopkg.in/yaml.v3"
 )
 
-type CustomProcedure struct {
-    Name         string `yaml:"name" json:"name"`
-    Command      string `yaml:"command" json:"command"`
+// Application represents the core and external applications
+type Application struct {
+    Core     map[string]string `yaml:"core" json:"core"`
+    External []ExternalApp     `yaml:"external" json:"external"`
+}
+
+// ExternalApp represents an external application with GPG key, repo, and packages
+type ExternalApp struct {
+    Name      string            `yaml:"name" json:"name"`
+    GPGKeyURL string            `yaml:"gpg_key_url" json:"gpg_key_url"`
+    Repo      string            `yaml:"repo" json:"repo"`
+    Packages  map[string]string `yaml:"packages" json:"packages"`
+}
+
+// ConfigurationTemplate represents a configuration template
+type ConfigurationTemplate struct {
+    Name         string      `yaml:"name" json:"name"`
+    TemplateFile string      `yaml:"template_file" json:"template_file"`
+    OutputFile   string      `yaml:"output_file" json:"output_file"`
+    RemoteFile   string      `yaml:"remote_file" json:"remote_file"`
+    Sudo         bool        `yaml:"sudo" json:"sudo"`
+    Data         interface{} `yaml:"data" json:"data"`
+}
+
+// Command represents a custom command to execute
+type Command struct {
+    Name           string `yaml:"name" json:"name"`
+    Command        string `yaml:"command" json:"command"`
     ExpectedOutput string `yaml:"expected_output" json:"expected_output"`
-    Sudo         bool   `yaml:"sudo" json:"sudo"`
+    Sudo           bool   `yaml:"sudo" json:"sudo"`
 }
 
-type CustomProcedures []CustomProcedure
-
-// Config represents the structure of the configuration file
+// Host represents a host configuration
 type Host struct {
-    Host              string `yaml:"host" json:"host"`
-    Port              string `yaml:"port" json:"port"`
-    User              string `yaml:"user" json:"user"`
-    Password          string `yaml:"password" json:"password"`
-    SSHKey            string `yaml:"ssh_key,omitempty" json:"ssh_key,omitempty"`
-    Packages          struct {
-        Standard          map[string]string `yaml:"standard" json:"standard"`
-        ThirdParty []struct {
-            Name       string   `yaml:"name" json:"name"`
-            GPGKeyURL  string   `yaml:"gpg_key_url" json:"gpg_key_url"`
-            Repo       string   `yaml:"repo" json:"repo"`
-            Packages   map[string]string `yaml:"packages" json:"packages"`
-        } `yaml:"third_party" json:"third_party"`
-    } `yaml:"packages" json:"packages"`
-    Templates []struct {
-        Name         string `yaml:"name" json:"name"`
-        TemplateFile string `yaml:"template_file" json:"template_file"`
-        OutputFile   string `yaml:"output_file" json:"output_file"`
-        RemoteFile   string `yaml:"remote_file" json:"remote_file"`
-        Sudo         bool   `yaml:"sudo" json:"sudo"`
-        Data         any    `yaml:"data" json:"data"`
-    } `yaml:"templates" json:"templates"`
-    CustomProcedures CustomProcedures `yaml:"custom_procedures" json:"custom_procedures"`
+    Host              string                   `yaml:"host" json:"host"`
+    Port              string                   `yaml:"port" json:"port"`
+    User              string                   `yaml:"user" json:"user"`
+    Password          string                   `yaml:"password" json:"password"`
+    SSHKey            string                   `yaml:"ssh_key,omitempty" json:"ssh_key,omitempty"`
+    Application       Application              `yaml:"application" json:"application"`
+    Configuration     []ConfigurationTemplate  `yaml:"configuration" json:"configuration"`
+    Commands          []Command                `yaml:"command" json:"command"`
 }
-
-// Hosts is a slice of Host
-type Hosts []Host
 
 // Config represents the structure of the configuration file
 type Config struct {
     Common struct {
-        Packages struct {
-            // Standard   []string `yaml:"standard" json:"standard"`
-            Standard   map[string]string `yaml:"standard" json:"standard"`
-            ThirdParty []struct {
-                Name       string   `yaml:"name" json:"name"`
-                GPGKeyURL  string   `yaml:"gpg_key_url" json:"gpg_key_url"`
-                Repo       string   `yaml:"repo" json:"repo"`
-                Packages   map[string]string `yaml:"packages" json:"packages"`
-            } `yaml:"third_party" json:"third_party"`
-        } `yaml:"packages" json:"packages"`
-        Templates []struct {
-            Name         string `yaml:"name" json:"name"`
-            TemplateFile string `yaml:"template_file" json:"template_file"`
-            OutputFile   string `yaml:"output_file" json:"output_file"`
-            RemoteFile   string `yaml:"remote_file" json:"remote_file"`
-            Sudo         bool   `yaml:"sudo" json:"sudo"`
-            Data         any    `yaml:"data" json:"data"`
-        } `yaml:"templates" json:"templates"`
-        CustomProcedures CustomProcedures `yaml:"custom_procedures" json:"custom_procedures"`
+        Application      Application              `yaml:"application" json:"application"`
+        Configuration    []ConfigurationTemplate  `yaml:"configuration" json:"configuration"`
+        Commands         []Command                `yaml:"command" json:"command"`
     } `yaml:"common" json:"common"`
-    Hosts Hosts `yaml:"hosts" json:"hosts"`
-    // Hosts []struct {
-    //     Host              string `yaml:"host" json:"host"`
-    //     User              string `yaml:"user" json:"user"`
-    //     Password          string `yaml:"password" json:"password"`
-    //     SSHKey            string `yaml:"ssh_key,omitempty" json:"ssh_key,omitempty"`
-    //     Packages          struct {
-    //         Standard          []string `yaml:"standard" json:"standard"`
-    //         ThirdPartyPackages []struct {
-    //             Name       string   `yaml:"name" json:"name"`
-    //             GPGKeyURL  string   `yaml:"gpg_key_url" json:"gpg_key_url"`
-    //             Repo       string   `yaml:"repo" json:"repo"`
-    //             Packages   []string `yaml:"packages" json:"packages"`
-    //         } `yaml:"third_party_packages" json:"third_party_packages"`
-    //     } `yaml:"packages" json:"packages"`
-    //     Templates []struct {
-    //         Name         string `yaml:"name" json:"name"`
-    //         TemplateFile string `yaml:"template_file" json:"template_file"`
-    //         OutputFile   string `yaml:"output_file" json:"output_file"`
-    //         RemoteFile   string `yaml:"remote_file" json:"remote_file"`
-    //         Sudo         bool   `yaml:"sudo" json:"sudo"`
-    //         Data         any    `yaml:"data" json:"data"`
-    //     } `yaml:"templates" json:"templates"`
-    // } `yaml:"hosts" json:"hosts"`
+    Hosts []Host `yaml:"hosts" json:"hosts"`
 }
 
 // LoadConfig loads a configuration file (YAML or JSON) into the Config struct
@@ -147,6 +113,22 @@ func UpdateConfigFile(filePath string, config *Config) error {
         }
     } else {
         return fmt.Errorf("unsupported config file format: %s", filePath)
+    }
+
+    return nil
+}
+
+// ValidateConfig validates the configuration file
+func ValidateConfig(config *Config) error {
+    // Implement validation logic here
+    // For example, check if required fields are present and valid
+    for _, host := range config.Hosts {
+        if host.Host == "" {
+            return fmt.Errorf("host is required")
+        }
+        if host.User == "" {
+            return fmt.Errorf("user is required for host %s", host.Host)
+        }
     }
 
     return nil

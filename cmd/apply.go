@@ -17,10 +17,11 @@ var applyCmd = &cobra.Command{
 	Long: `Apply the configuration to the system. This command will read the configuration
 file and apply the settings to the system. It will also provide real-time updates
 to the user about the progress of the application process.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		config, err := common.LoadConfig("steward-config/config.yaml")
 		if err != nil {
 			logger.Errorf("Failed to load steward config: %v", err)
+			return err
 		}
 		logger.Infof("Steward config loaded successfully")
 
@@ -29,18 +30,19 @@ to the user about the progress of the application process.`,
 		updatedConfig := run.ApplyConfigWithProgress(config)
 		if updatedConfig == nil {
 			logger.Errorf("Failed to apply configuration")
-			return
+			return err
 		}
 		logger.Infof("Configuration applied successfully")
-		logger.Infof("Updated configuration: %v", updatedConfig)
+		logger.Debugf("Updated configuration: %v", updatedConfig)
 
 		// update config file with updatedConfig
 		err = common.UpdateConfigFile("steward-config/config.yaml", updatedConfig)
 		if err != nil {
 			logger.Errorf("Failed to update config file: %v", err)
-			return
+			return err
 		}
 		logger.Infof("Configuration file updated successfully")
+		return nil
 	},
 }
 

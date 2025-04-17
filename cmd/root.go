@@ -33,6 +33,7 @@ to quickly create a Cobra application.`,
 func Execute() {
 	err := rootCmd.Execute()
 	if err != nil {
+		logger.Errorf("Error executing command: %v", err)
 		os.Exit(1)
 	}
 }
