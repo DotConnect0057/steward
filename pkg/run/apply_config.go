@@ -35,7 +35,7 @@ func DisplayProgress(totalTasks int, completedTasks int, tasks []TaskStatus, mu 
     // Print the header
     fmt.Fprintf(writer, "Total Task: %d\tCompleted Task: %d\t\n", totalTasks, completedTasks)
     fmt.Fprintf(writer, "\n")
-    fmt.Fprintf(writer, "HOST\tPACKAGES\tTEMPLATES\tCOMMANDS\tSTATUS\n")
+    fmt.Fprintf(writer, "HOST\tPACKAGES\tCONFIGURATION\tCOMMANDS\tSTATUS\n")
 
     // Print each task's status
     mu.Lock()
