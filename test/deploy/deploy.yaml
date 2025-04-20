@@ -25,6 +25,7 @@ spec:
             - NET_RAW
             - SYS_CHROOT
             - AUDIT_WRITE
+---
 # Service for ubuntu-ssh
 apiVersion: v1
 kind: Service
