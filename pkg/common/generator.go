@@ -69,7 +69,7 @@ func GenerateStewardConfig(configPath string) error {
         Hosts: []Host{
             {
                 Host:     "ubuntu-ssh-service",
-                Port:     "2222",
+                Port:     "22",
                 User:     "myuser",
                 Password: "password",
                 Application: Application{
