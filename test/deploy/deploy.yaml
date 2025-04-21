@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: ubuntu-ssh
-        image: 192.168.100.112:5000/ubuntu-ssh-server
+        image: 192.168.100.112:5000/ubuntu-ssh-server:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 22
