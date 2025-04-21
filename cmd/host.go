@@ -24,18 +24,14 @@ var addHostCmd = &cobra.Command{
         host, _ := cmd.Flags().GetString("host")
 
         if host == "" || username == "" {
-            // fmt.Println("Error: Host and username are required")
             return fmt.Errorf("Error: Host and username are required")
         }
-
 		if password == "" && key == "" {
-			// fmt.Println("Error: Either password or SSH key must be provided")
 			return fmt.Errorf("Error: Either password or SSH key must be provided")
 		}
 
         config, err := common.LoadConfig("steward-config/config.yaml")
         if err != nil {
-            // logger.Errorf("Failed to load configuration: %v", err)
             return fmt.Errorf("Failed to load configuration: %v", err)
         }
 
@@ -51,11 +47,9 @@ var addHostCmd = &cobra.Command{
         // Save the updated configuration
         err = common.UpdateConfigFile("steward-config/config.yaml", config)
         if err != nil {
-            // logger.Errorf("Failed to update configuration file: %v", err)
             return fmt.Errorf("Failed to update configuration file: %v", err)
         }
         logger.Infof("Host %s added successfully", host)
-
 		return nil
     },
 }

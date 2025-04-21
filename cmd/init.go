@@ -1,11 +1,15 @@
 package cmd
 
 import (
+    "fmt"
     "os"
+    "path/filepath"
 
     "github.com/spf13/cobra"
     "steward/pkg/common"
 )
+
+var configFilePath string // Variable to store the custom configuration file path
 
 // initCmd represents the init command
 var initCmd = &cobra.Command{
@@ -14,8 +18,17 @@ var initCmd = &cobra.Command{
     Long: `Initialize a new configuration file. This command will create a new configuration
 file in the specified directory. The new configuration file will be created with default values.`,
     RunE: func(cmd *cobra.Command, args []string) error {
-        // Define the default configuration file path
-        configFilePath := "steward-config/config.yaml"
+        // Use the default path if no custom path is provided
+        if configFilePath == "" {
+            configFilePath = "./config.yaml"
+        }
+
+        // Check if file path includes .yaml or .yml
+        if filepath.Ext(configFilePath) != ".yaml" && filepath.Ext(configFilePath) != ".yml" {
+            err := fmt.Errorf("Invalid file name extension: %s. Please use .yaml or .yml", configFilePath)
+            logger.Errorf("Failed to generate steward config: %v", err)
+            return err
+        }
 
         // Check if the configuration file already exists
         if _, err := os.Stat(configFilePath); err == nil {
@@ -28,13 +41,25 @@ file in the specified directory. The new configuration file will be created with
         }
 
         // Generate a new configuration file
-        err := common.GenerateStewardConfig()
+        err := common.GenerateStewardConfig(configFilePath)
         if err != nil {
             logger.Errorf("Failed to generate steward config: %v", err)
             return err
         }
-
         logger.Infof("Steward config generated successfully at %s", configFilePath)
+
+        // Create additional directories: "config/output" and "config/template"
+        outputDir := "output"
+        templateDir := "template"
+
+        for _, dir := range []string{outputDir, templateDir} {
+            if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+                logger.Errorf("Failed to create directory %s: %v", dir, err)
+                return err
+            }
+            logger.Infof("Directory created: %s", dir)
+        }
+
         return nil
     },
 }
@@ -42,13 +67,6 @@ file in the specified directory. The new configuration file will be created with
 func init() {
     rootCmd.AddCommand(initCmd)
 
-    // Here you will define your flags and configuration settings.
-
-    // Cobra supports Persistent Flags which will work for this command
-    // and all subcommands, e.g.:
-    // initCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-    // Cobra supports local flags which will only run when this command
-    // is called directly, e.g.:
-    // initCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+    // Add a flag for specifying the configuration file path
+    initCmd.Flags().StringVarP(&configFilePath, "config", "c", "", "Path to the configuration file (default: steward-config/config.yaml)")
 }
