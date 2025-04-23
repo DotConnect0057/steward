@@ -22,10 +22,19 @@ to the user about the progress of the application process.`,
             logger.Errorf("Failed to load steward config from %s: %v", configPath, err)
             return err
         }
+        logger.Infof("Debug %s", config)
+
+		// Merge common parameters into host-specific configurations
+		mergedConfig, err := common.MergeCommonToHosts(config)
+		if err != nil {
+			logger.Errorf("Error merging common parameters: %v\n", err)
+			return err
+		}
         logger.Infof("Steward config loaded successfully from %s", configPath)
+        logger.Infof("Merged Config %s", mergedConfig)
 
         // Apply the configuration
-        updatedConfig := run.ApplyConfigWithProgress(config)
+        updatedConfig := run.ApplyConfigWithProgress(mergedConfig)
 		logger.Infof("Applying configuration... %s", updatedConfig)
         if updatedConfig == nil {
             logger.Errorf("Failed to apply configuration")

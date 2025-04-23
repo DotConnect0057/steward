@@ -2,20 +2,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ubuntu-ssh
+  name: ubuntu-25-04-ssh
 spec:
   selector:
     matchLabels:
-      run: ubuntu-ssh
+      run: ubuntu-25-04-ssh
   replicas: 1
   template:
     metadata:
       labels:
-        run: ubuntu-ssh
+        run: ubuntu-25-04-ssh
     spec:
       containers:
-      - name: ubuntu-ssh
-        image: 192.168.100.112:5000/ubuntu-ssh-server:latest
+      - name: ubuntu-25-04-ssh
+        image: 192.168.100.112:5000/ubuntu-ssh-server:25.04
         imagePullPolicy: Always
         ports:
         - containerPort: 22
@@ -30,10 +30,178 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: ubuntu-ssh-service
+  name: ubuntu-25-04-ssh-svc
 spec:
   selector:
-    run: ubuntu-ssh
+    run: ubuntu-25-04-ssh
+  ports:
+  - protocol: TCP
+    port: 22
+    targetPort: 22
+  type: ClusterIP
+---
+# Deployment for ubuntu-ssh
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ubuntu-24-10-ssh
+spec:
+  selector:
+    matchLabels:
+      run: ubuntu-24-10-ssh
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        run: ubuntu-24-10-ssh
+    spec:
+      containers:
+      - name: ubuntu-24-10-ssh
+        image: 192.168.100.112:5000/ubuntu-ssh-server:24.10
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 22
+        securityContext:
+          capabilities:
+            add:
+            - NET_RAW
+            - SYS_CHROOT
+            - AUDIT_WRITE
+---
+# Service for ubuntu-ssh
+apiVersion: v1
+kind: Service
+metadata:
+  name: ubuntu-24-10-ssh-svc
+spec:
+  selector:
+    run: ubuntu-24-10-ssh
+  ports:
+  - protocol: TCP
+    port: 22
+    targetPort: 22
+  type: ClusterIP
+---
+# Deployment for ubuntu-ssh
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ubuntu-24-04-ssh
+spec:
+  selector:
+    matchLabels:
+      run: ubuntu-24-04-ssh
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        run: ubuntu-24-04-ssh
+    spec:
+      containers:
+      - name: ubuntu-24-04-ssh
+        image: 192.168.100.112:5000/ubuntu-ssh-server:24.04
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 22
+        securityContext:
+          capabilities:
+            add:
+            - NET_RAW
+            - SYS_CHROOT
+            - AUDIT_WRITE
+---
+# Service for ubuntu-ssh
+apiVersion: v1
+kind: Service
+metadata:
+  name: ubuntu-24-04-ssh-svc
+spec:
+  selector:
+    run: ubuntu-24-04-ssh
+  ports:
+  - protocol: TCP
+    port: 22
+    targetPort: 22
+  type: ClusterIP
+---
+# Deployment for ubuntu-ssh
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ubuntu-22-04-ssh
+spec:
+  selector:
+    matchLabels:
+      run: ubuntu-22-04-ssh
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        run: ubuntu-22-04-ssh
+    spec:
+      containers:
+      - name: ubuntu-22-04-ssh
+        image: 192.168.100.112:5000/ubuntu-ssh-server:22.04
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 22
+        securityContext:
+          capabilities:
+            add:
+            - NET_RAW
+            - SYS_CHROOT
+            - AUDIT_WRITE
+---
+# Service for ubuntu-ssh
+apiVersion: v1
+kind: Service
+metadata:
+  name: ubuntu-22-04-ssh-svc
+spec:
+  selector:
+    run: ubuntu-22-04-ssh
+  ports:
+  - protocol: TCP
+    port: 22
+    targetPort: 22
+  type: ClusterIP
+---
+# Deployment for ubuntu-ssh
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ubuntu-20-04-ssh
+spec:
+  selector:
+    matchLabels:
+      run: ubuntu-20-04-ssh
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        run: ubuntu-20-04-ssh
+    spec:
+      containers:
+      - name: ubuntu-20-04-ssh
+        image: 192.168.100.112:5000/ubuntu-ssh-server:20.04
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 22
+        securityContext:
+          capabilities:
+            add:
+            - NET_RAW
+            - SYS_CHROOT
+            - AUDIT_WRITE
+---
+# Service for ubuntu-ssh
+apiVersion: v1
+kind: Service
+metadata:
+  name: ubuntu-20-04-ssh-svc
+spec:
+  selector:
+    run: ubuntu-20-04-ssh
   ports:
   - protocol: TCP
     port: 22

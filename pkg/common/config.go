@@ -143,3 +143,80 @@ func isYAML(filePath string) bool {
 func isJSON(filePath string) bool {
     return len(filePath) > 5 && filePath[len(filePath)-5:] == ".json"
 }
+
+// MergeCommonToHosts merges the common parameters into each host-specific configuration
+// and removes the common section from the configuration.
+func MergeCommonToHosts(config *Config) (*Config, error) {
+    // Create a copy of the input config to avoid modifying it directly
+    updatedConfig := *config
+    updatedConfig.Hosts = make([]Host, len(config.Hosts))
+
+    for i, host := range config.Hosts {
+        // Create a copy of the host to avoid modifying the original
+        updatedHost := host
+
+        // Merge common application core packages
+        if updatedHost.Application.Core == nil {
+            updatedHost.Application.Core = make(map[string]string)
+        }
+        for key, value := range config.Common.Application.Core {
+            if _, exists := updatedHost.Application.Core[key]; !exists {
+                updatedHost.Application.Core[key] = value
+            }
+        }
+
+        // Merge common external applications
+        for _, commonExternal := range config.Common.Application.External {
+            found := false
+            for _, hostExternal := range updatedHost.Application.External {
+                if hostExternal.Name == commonExternal.Name {
+                    found = true
+                    break
+                }
+            }
+            if !found {
+                updatedHost.Application.External = append(updatedHost.Application.External, commonExternal)
+            }
+        }
+
+        // Merge common configuration templates
+        for _, commonConfig := range config.Common.Configuration {
+            found := false
+            for _, hostConfig := range updatedHost.Configuration {
+                if hostConfig.Name == commonConfig.Name {
+                    found = true
+                    break
+                }
+            }
+            if !found {
+                updatedHost.Configuration = append(updatedHost.Configuration, commonConfig)
+            }
+        }
+
+        // Merge common commands
+        for _, commonCommand := range config.Common.Commands {
+            found := false
+            for _, hostCommand := range updatedHost.Commands {
+                if hostCommand.Name == commonCommand.Name {
+                    found = true
+                    break
+                }
+            }
+            if !found {
+                updatedHost.Commands = append(updatedHost.Commands, commonCommand)
+            }
+        }
+
+        // Add the updated host to the new config
+        updatedConfig.Hosts[i] = updatedHost
+    }
+
+    // Remove the common section by resetting it to an empty struct
+    updatedConfig.Common = struct {
+        Application   Application             `yaml:"application" json:"application"`
+        Configuration []ConfigurationTemplate `yaml:"configuration" json:"configuration"`
+        Commands      []Command               `yaml:"command" json:"command"`
+    }{}
+
+    return &updatedConfig, nil
+}
