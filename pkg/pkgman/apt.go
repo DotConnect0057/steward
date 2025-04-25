@@ -66,6 +66,12 @@ func (a *AptManager) InstallGPGKey(sudoPass string, keyName string, keyURL strin
         return nil
     }
 
+    // Create Directory for keyrings if it doesn't exist
+    createDirCommand := "sudo mkdir -p /etc/apt/keyrings"
+    if err := exec.RunRemoteCommandWithSudo(a.Client, createDirCommand, sudoPass); err != nil {
+        return fmt.Errorf("failed to create keyrings directory: %w", err)
+    }
+
     // Install the GPG key if not already installed
     command := fmt.Sprintf("curl -fsSL %s | sudo gpg --dearmor -o /etc/apt/keyrings/%s-apt-keyring.gpg", keyURL, keyName)
     return exec.RunRemoteCommandWithSudo(a.Client, command, sudoPass)
@@ -98,7 +104,7 @@ func (a *AptManager) FetchInstalledVersion(packageName string) (string, error) {
     }
 
     // Fetch the installed version of the package
-    command := fmt.Sprintf("dpkg -l | grep '^ii' | grep ' %s ' | awk '{print $3}'", packageName)
+    command := fmt.Sprintf("dpkg -l | grep '^ii' | grep '  %s  ' | awk '{print $3}'", packageName)
     version, err := exec.RunRemoteCommandWithOutput(a.Client, command)
     if err != nil {
         return "", fmt.Errorf("failed to fetch installed version of package '%s': %w", packageName, err)

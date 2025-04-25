@@ -93,7 +93,7 @@ func LoadConfig(filePath string) (*Config, error) {
 // This function overwrites the existing file with the new data
 func UpdateConfigFile(filePath string, config *Config) error {
     // Open the file for writing
-    file, err := os.Create(filePath+".tmp")
+    file, err := os.Create(filePath+".lock")
     if err != nil {
         return fmt.Errorf("failed to open config file for writing: %w", err)
     }
@@ -165,16 +165,24 @@ func MergeCommonToHosts(config *Config) (*Config, error) {
             }
         }
 
-        // Merge common external applications
+        // Merge or add common external applications
         for _, commonExternal := range config.Common.Application.External {
             found := false
-            for _, hostExternal := range updatedHost.Application.External {
+            for j, hostExternal := range updatedHost.Application.External {
                 if hostExternal.Name == commonExternal.Name {
+                    // If the external application exists, merge packages
+                    for pkgKey, pkgValue := range commonExternal.Packages {
+                        if _, exists := hostExternal.Packages[pkgKey]; !exists {
+                            logger.Debugf("Adding package %s to external application %s for host %s", pkgKey, commonExternal.Name, updatedHost.Host)
+                            updatedHost.Application.External[j].Packages[pkgKey] = pkgValue
+                        }
+                    }
                     found = true
                     break
                 }
             }
             if !found {
+                // Add the common external application as a new entry
                 updatedHost.Application.External = append(updatedHost.Application.External, commonExternal)
             }
         }

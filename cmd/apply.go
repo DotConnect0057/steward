@@ -35,7 +35,7 @@ to the user about the progress of the application process.`,
 
         // Apply the configuration
         updatedConfig := run.ApplyConfigWithProgress(mergedConfig)
-		logger.Infof("Applying configuration... %s", updatedConfig)
+		logger.Infof("Applied configuration... %s", updatedConfig)
         if updatedConfig == nil {
             logger.Errorf("Failed to apply configuration")
             return err

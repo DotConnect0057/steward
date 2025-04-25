@@ -195,7 +195,8 @@ func ApplyConfigWithProgress(config *common.Config) (*common.Config) {
 					return
 				}
 				// replace app name in config with app name and version
-				config.Common.Application.Core[pkg] = appVersion
+				config.Hosts[i].Application.Core[pkg] = appVersion
+				// config.Common.Application.Core[pkg] = appVersion
 				logger.Infof("Installed package %s on host %s", pkg, host.Host)
 				mu.Unlock()
 
@@ -276,7 +277,7 @@ func ApplyConfigWithProgress(config *common.Config) (*common.Config) {
 				}
 			}
 			// Install host-specific external packages
-			for _, app := range host.Application.External {
+			for p, app := range host.Application.External {
 				// Install GPG key skip if empty
 				if app.GPGKeyURL != "" {
 					err := aptman.InstallGPGKey(host.Password, app.Name, app.GPGKeyURL)
@@ -329,7 +330,7 @@ func ApplyConfigWithProgress(config *common.Config) (*common.Config) {
 						return
 					}
 					// replace app name in config with app name and version
-					config.Common.Application.External[0].Packages[pkg] = appVersion
+					config.Hosts[i].Application.External[p].Packages[pkg] = appVersion
 					logger.Infof("Installed package %s on host %s", pkg, host.Host)
 					mu.Unlock()
 
