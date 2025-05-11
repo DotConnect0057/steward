@@ -25,10 +25,11 @@ st apply
 ```
 When you perform apply. Following example command output given to trace tasks we defined in yaml/json file.
 ```
-Total Task: 21  Completed Task: 21  
-----------------------------------------------------
-192.168.100.14  Packages: 8/8  Templates: 2/2  Completed
-192.168.100.42  Packages: 9/9  Templates: 2/2  Completed
+Total Task: 21  Completed Task: 21
+
+HOST            PACKAGES       CONFIGURATION   COMMANDS  STATUS
+192.168.100.14  8/8            2/2             0/2       Completed
+192.168.100.42  9/9            2/2             0/2       Completed
 ```
 
 ## Features Todo
