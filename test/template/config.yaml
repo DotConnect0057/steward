@@ -1,0 +1,209 @@
+common:
+    application:
+        core:
+            - name: apt-transport-https
+              manager: apt
+              version: ""
+            - name: ca-certificates
+              manager: apt
+              version: ""
+            - name: curl
+              manager: apt
+              version: ""
+            - name: gpg
+              manager: apt
+              version: ""
+        external:
+            - name: kubectl
+              gpg_key_url: https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key
+              repo: https://pkgs.k8s.io/core:/stable:/v1.32/deb/
+              manager: apt
+              version: ""
+            - name: kubelet
+              gpg_key_url: https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key
+              repo: https://pkgs.k8s.io/core:/stable:/v1.32/deb/
+              manager: apt
+              version: ""
+            - name: kubeadm
+              gpg_key_url: https://pkgs.k8s.io/core:/stable:/v1.32/deb/Release.key
+              repo: https://pkgs.k8s.io/core:/stable:/v1.32/deb/
+              manager: apt
+              version: ""
+    configuration:
+        - name: haproxy
+          template_file: ./template/haproxy_template.cfg
+          output_file: ./output/haproxy.cfg
+          remote_file: /etc/haproxy/haproxy.cfg
+          sudo: true
+          data:
+            backends:
+                - address: 192.168.1.101
+                  name: web1
+                  port: 80
+                - address: 192.168.1.102
+                  name: web2
+                  port: 80
+                - address: 192.168.1.103
+                  name: web3
+                  port: 80
+    command:
+        - name: update-packages
+          command: apt-get update
+          expected_output: ""
+          sudo: true
+hosts:
+    - host: ubuntu-20-04-ssh-svc
+      port: "22"
+      user: myuser
+      password: password
+      application:
+        core:
+            - name: nginx
+              manager: "apt"
+              version: ""
+        external:
+            - name: cri-o
+              gpg_key_url: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/Release.key
+              repo: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/
+              manager: apt
+              version: ""
+      configuration:
+        - name: keepalived
+          template_file: ./template/keepalived_template.cfg
+          output_file: ./output/2004_keepalived.cfg
+          remote_file: /etc/keepalived/keepalived.conf
+          sudo: true
+          data:
+            interface: eth0
+            priority: 100
+            state: MASTER
+            virtual_ip: 192.168.1.100
+      command:
+        - name: install-nginx
+          command: apt-get install -y nginx
+          expected_output: ""
+          sudo: true
+    - host: ubuntu-22-04-ssh-svc
+      port: "22"
+      user: myuser
+      password: password
+      application:
+        core:
+            - name: nginx
+              manager: "apt"
+              version: ""
+        external:
+            - name: cri-o
+              gpg_key_url: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/Release.key
+              repo: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/
+              manager: apt
+              version: ""
+      configuration:
+        - name: keepalived
+          template_file: ./template/keepalived_template.cfg
+          output_file: ./output/2204_keepalived.cfg
+          remote_file: /etc/keepalived/keepalived.conf
+          sudo: true
+          data:
+            interface: eth0
+            priority: 100
+            state: MASTER
+            virtual_ip: 192.168.1.100
+      command:
+        - name: install-nginx
+          command: apt-get install -y nginx
+          expected_output: ""
+          sudo: true
+    - host: ubuntu-24-04-ssh-svc
+      port: "22"
+      user: myuser
+      password: password
+      application:
+        core:
+            - name: nginx
+              manager: "apt"
+              version: ""
+        external:
+            - name: cri-o
+              gpg_key_url: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/Release.key
+              repo: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/
+              manager: apt
+              version: ""
+      configuration:
+        - name: keepalived
+          template_file: ./template/keepalived_template.cfg
+          output_file: ./output/2404_keepalived.cfg
+          remote_file: /etc/keepalived/keepalived.conf
+          sudo: true
+          data:
+            interface: eth0
+            priority: 100
+            state: MASTER
+            virtual_ip: 192.168.1.100
+      command:
+        - name: install-nginx
+          command: apt-get install -y nginx
+          expected_output: ""
+          sudo: true
+    - host: ubuntu-24-10-ssh-svc
+      port: "22"
+      user: myuser
+      password: password
+      application:
+        core:
+            - name: nginx
+              manager: "apt"
+              version: ""
+        external:
+            - name: cri-o
+              gpg_key_url: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/Release.key
+              repo: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/
+              manager: apt
+              version: ""
+      configuration:
+        - name: keepalived
+          template_file: ./template/keepalived_template.cfg
+          output_file: ./output/2410_keepalived.cfg
+          remote_file: /etc/keepalived/keepalived.conf
+          sudo: true
+          data:
+            interface: eth0
+            priority: 100
+            state: MASTER
+            virtual_ip: 192.168.1.100
+      command:
+        - name: install-nginx
+          command: apt-get install -y nginx
+          expected_output: ""
+          sudo: true
+    - host: ubuntu-25-04-ssh-svc
+      port: "22"
+      user: myuser
+      password: password
+      application:
+        core:
+            - name: nginx
+              manager: "apt"
+              version: ""
+        external:
+            - name: cri-o
+              gpg_key_url: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/Release.key
+              repo: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.32/deb/
+              manager: apt
+              version: ""
+      configuration:
+        - name: keepalived
+          template_file: ./template/keepalived_template.cfg
+          output_file: ./output/2504_keepalived.cfg
+          remote_file: /etc/keepalived/keepalived.conf
+          sudo: true
+          data:
+            interface: eth0
+            priority: 100
+            state: MASTER
+            virtual_ip: 192.168.1.100
+      command:
+        - name: install-nginx
+          command: apt-get install -y nginx
+          expected_output: ""
+          sudo: true
